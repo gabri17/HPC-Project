@@ -243,17 +243,9 @@ int main(int argc, char* argv[]){
 
         double sumC = 0, sumE = 0, sumI = 0; //C, Em, Im
         Point *E = NULL, *I = NULL;
-        double *EflattenX = NULL, *EflattenY = NULL;
-        double *IflattenX = NULL, *IflattenY = NULL;
 
         int sendcounts[processes], displs[processes];
-        int j;
         int Ec = 0, Ic = 0;
-        for(j = 0; j < processes; j++){
-            sendcounts[j] = 0;
-            displs[j] = 0;
-        }
-
 
         if(rank == 0){
             //first sum member
@@ -263,35 +255,13 @@ int main(int argc, char* argv[]){
             generate_Em_Im(A, B, C, (int) n_m, &E, &Ec, &I, &Ic);
             printf("m=%d  nm=%f triangles=%d edge_count (excluding vertices)=%d  interior_count=%d\n", m, n_m, triangles, Ec, Ic);
 
-            EflattenX = malloc(sizeof(double) * Ec);
-            EflattenY = malloc(sizeof(double) * Ec);
-            IflattenX = malloc(sizeof(double) * Ic);
-            IflattenY = malloc(sizeof(double) * Ic);
-
-            //avoid definition of a complex struct
-            int i;
-            int ind = 0;
-            for(i = 0; i < Ec; i++){
-                EflattenX[ind] = E[i].x;
-                EflattenY[ind] = E[i].y;
-                ind++;
-                //printf("(%f, %f)\n", E[i].x, E[i].y);
-            }
 		    compute_counts_and_displs(&sendcounts[0], &displs[0], processes, Ec);
-            //int jj;
-            //for(jj = 0; jj < processes; jj++){
-                //printf("[j: %d, #: %d, from: %d ]", jj, sendcounts[jj], displs[jj]);
-            //}
         }
 
         int maxE = (n_m >= 1) ? (3 * n_m - 3) : 0;
         //here must happen the scatter magic
         int local_length = compute_local_length(processes, rank, maxE);
         Point* local_E = malloc(sizeof(Point) * local_length);
-        /*double* local_EX = malloc(sizeof(double) * local_length);
-        double* local_EY = malloc(sizeof(double) * local_length);
-        MPI_Scatterv(EflattenX, sendcounts, displs, MPI_DOUBLE, local_EX, local_length, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-        MPI_Scatterv(EflattenY, sendcounts, displs, MPI_DOUBLE, local_EY, local_length, MPI_DOUBLE, 0, MPI_COMM_WORLD);*/
         MPI_Scatterv(E, sendcounts, displs, MPI_POINT, local_E, local_length, MPI_POINT, 0, MPI_COMM_WORLD);
 
         double local_sum = 0;
@@ -301,20 +271,9 @@ int main(int argc, char* argv[]){
             //printf("[%d-%f-%f]\n", rank, local_EX[indx], local_EY[indx]);
         }
         MPI_Reduce(&local_sum, &sumE, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-
-        //free(local_EX);
-        //free(local_EY);
         free(local_E);
 
         if(rank == 0){
-            int i;
-            int ind = 0;
-            for(i = 0; i < Ic; i++){
-                IflattenX[ind] = I[i].x;
-                IflattenY[ind] = I[i].y;
-                ind++;
-                //printf("(%f, %f)\n", I[i].x, I[i].y);
-            }
 		    compute_counts_and_displs(&sendcounts[0], &displs[0], processes, Ic);
         }
 
@@ -325,10 +284,6 @@ int main(int argc, char* argv[]){
         }
         local_length = compute_local_length(processes, rank, maxI);
         Point* local_I = malloc(sizeof(Point) * local_length);
-        //double* local_IX = malloc(sizeof(double) * local_length);
-        //double* local_IY = malloc(sizeof(double) * local_length);
-        //MPI_Scatterv(IflattenX, sendcounts, displs, MPI_DOUBLE, local_IX, local_length, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-        //MPI_Scatterv(IflattenY, sendcounts, displs, MPI_DOUBLE, local_IY, local_length, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         MPI_Scatterv(I, sendcounts, displs, MPI_POINT, local_I, local_length, MPI_POINT, 0, MPI_COMM_WORLD);
 
         local_sum = 0;
@@ -338,8 +293,6 @@ int main(int argc, char* argv[]){
         }
         MPI_Reduce(&local_sum, &sumI, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
-        //free(local_IX);
-        //free(local_IY);
         free(local_I);
     
         if(rank == 0){
@@ -352,8 +305,6 @@ int main(int argc, char* argv[]){
             printf("R[%d][0] = %f\n", m, R[m][0]);
             free(E);
             free(I);
-            free(EflattenX);
-            free(EflattenY);
             printf("\n");       
         }
 
@@ -387,8 +338,6 @@ int main(int argc, char* argv[]){
 
 	MPI_Type_free(&MPI_POINT);
     MPI_Finalize();
-
-
 
     return 0;
 }
