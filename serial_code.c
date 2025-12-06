@@ -151,7 +151,7 @@ int main(int argc, char* argv[]){
     for(int m = 0; m < MaxLevel; m++){
         //compute R[0][0], R[1][0], ..., R[m][0], ..., R[MaxLevel][0]
         double acc = 0;
-        double n_m = (double) (2 << m);
+        double n_m = (double) (1 << m);
         int triangles = (int) (pow(n_m, 2));
 
         double sumC = 0, sumE = 0, sumI = 0; //C, Em, Im
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]){
         Point *E = NULL, *I = NULL;
         int Ec = 0, Ic = 0;
         generate_Em_Im(A, B, C, (int) n_m, &E, &Ec, &I, &Ic);
-        printf("m=%d  nm=%f triangles=%f edge_count (excluding vertices)=%d  interior_count=%d\n", m, n_m, triangles, Ec, Ic);
+        printf("m=%d  nm=%f triangles=%d edge_count (excluding vertices)=%d  interior_count=%d\n", m, n_m, triangles, Ec, Ic);
 
         //second sum member
         for (int i = 0; i < Ec; ++i){
