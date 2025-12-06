@@ -1,0 +1,27 @@
+For loop 97-110.
+- Happens to master process.
+- Could be parallelized with OpenMP.
+- - variable ec is shared... depends on previous iteration
+- - - ec = ec + 1 (R/W in same iteration and R/W loop carried)
+
+For loop 115-126 with inner loop 118-125:
+- Happens to master process.
+- Parallelize outer loop: then zero issues.
+- Issues: ic is shared, as above
+- Parallelize inner loop: worse we fork too many processees.
+
+compute_counts_and_displs,
+- for loop 151-154: master process, easily parallelized
+- loop 162-167: less trivial, avoid parallelization
+- for loop 174-176: W/R data dependencies - not parallelizable, unless we use parallel scan
+
+224-226: allocation loop, can be easily parallelized
+237-311: loop for computing all columns 0: can be parallelized, but then be careful about the inner parallelization we make!
+- one thread per iteration... then each thread is scattering... 
+- maybe it's better to paralleize inner stuff
+
+289-293: top parallelization with reduce! - Very strong
+
+317-326: master process, unparallelizable
+
+330-332: deallocation loop, paralleizable, see allocation one
