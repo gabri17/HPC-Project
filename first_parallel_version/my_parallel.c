@@ -33,7 +33,7 @@ Point tri_interp(Point A, Point B, Point C, double u, double v) {
 
 
 /* Linear interpolation between two points */
-static Point lerp(Point A, Point B, double t)
+Point lerp(Point A, Point B, double t)
 {
     Point P;
     P.x = A.x + t * (B.x - A.x); //Px = t Bx + (1-t) Ax
