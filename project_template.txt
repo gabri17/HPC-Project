@@ -1,0 +1,22 @@
+1) Introduction
+- We describe the numerical integration problem. We explain some techinques and then we explain the Romber Method.
+- Serial code of the method in general.
+- We explain the paper we found.
+
+2) Parallel design.
+- We explain the serial code of the paper.
+- We prove the similarity with the Romberg's method in general.
+- We analyze data dependencies (DETAILED).
+- We show unparallelizable parts. We address it with parallel scan.
+
+3) Implementation.
+- Implement parallel code in the paper. No OpenMP is used, tell it.
+- Implement parallel code with OUR strategy (MPI and OpenMP). Can be just parallel code of the paper + OpenMP or another strategy.
+- Explain pros and cons of each strategy.
+
+4) Benchmarking.
+- Explain how we increase the size of the problem: function more complex.
+- We do benchmarking of both implementation (multiple runs, means, std devand confidence intervals of execution times, speedup and efficiency):
+- - same size, incraese processors (strong scalability)
+- - size increasing according in how processors are increasing (weak scalability)
+- Plots.
