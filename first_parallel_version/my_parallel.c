@@ -4,17 +4,27 @@
 #include <mpi.h>
 #include <stddef.h>
 
-#define ITER 800000
+int getProblemSize(){
+    char *iter_str = getenv("ITER");
+    if (iter_str == NULL) {
+        return 10000;
+    } else {
+        return atoi(iter_str);
+    }
+
+}
 
 double f(double x, double y) {
 
-    double result = 0;
+    int ITER = getProblemSize();
+
+    double dummy = 0;
     int i;
     for(i=0; i < ITER; i++){
-        result += 1/pow(x, 2) + 1/pow(y, 2) + 1;
+        dummy += 1/pow(x, 2) + 1/pow(y, 2) + 1;
     }
-
-    return (result);
+    double result = pow(x, 5) + pow(y, 5);
+    return result;
 }
 
 typedef struct { double x, y; } Point; //struct to represent coordinates of the point
@@ -183,7 +193,7 @@ void compute_counts_and_displs(int* sendcounts, int* displs, int processes, int 
 
 int main(int argc, char* argv[]){
 
-    MPI_Init(NULL, NULL);
+    MPI_Init(&argc, &argv);
 
 	int processes, rank;
 	MPI_Comm_size(MPI_COMM_WORLD, &processes);
@@ -204,14 +214,14 @@ int main(int argc, char* argv[]){
     MPI_Type_create_struct(elements_in_struct, blocklengths, offsets, types, &MPI_POINT);
     MPI_Type_commit(&MPI_POINT);
 
-
-    
     //paremeters chosen
     int MaxLevel = 8;
 
-    Point A = {2.0, 1.0};
-    Point B = {4.0, 2.5};
-    Point C = {6.0, 0.75};
+    //./program xA yA xB yB xC yC
+    int paramIndx = 1;
+    Point A = {atof(argv[paramIndx++]), atof(argv[paramIndx++])};
+    Point B = {atof(argv[paramIndx++]), atof(argv[paramIndx++]),};
+    Point C = {atof(argv[paramIndx++]), atof(argv[paramIndx++]),};
 
 
     //INPUT PREPARATION
@@ -333,7 +343,9 @@ int main(int argc, char* argv[]){
         free(R);
 
         double endTime = MPI_Wtime();
-        printf("Time elapsed %f, %d processors, complexity %d", endTime - startTime, processes, ITER);
+        printf("Time elapsed %f, %d processors, complexity %d, A(%f, %f), B(%f, %f), C(%f, %f)", 
+        endTime - startTime, processes, getProblemSize(), A.x, A.y, B.x, B.y, C.x, C.y
+        );
     }
 
 	MPI_Type_free(&MPI_POINT);

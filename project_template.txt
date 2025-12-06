@@ -7,11 +7,11 @@
 - We explain the serial code of the paper.
 - We prove the similarity with the Romberg's method in general.
 - We analyze data dependencies (DETAILED).
-- We show unparallelizable parts. We address it with parallel scan.
+- We show unparallelizable parts. We can address it with parallel scan.
 
 3) Implementation.
 - Implement parallel code in the paper. No OpenMP is used, tell it.
-- Implement parallel code with OUR strategy (MPI and OpenMP). Can be just parallel code of the paper + OpenMP or another strategy.
+- Implement parallel code with OUR strategy (MPI and OpenMP).
 - Explain pros and cons of each strategy.
 
 4) Benchmarking.
