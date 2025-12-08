@@ -100,13 +100,16 @@ void generate_Em_Im(Point A, Point B, Point C, int nm,
             //each point on the edge is a linear contribution of its extremes
 
             Point pAB = lerp(A, B, u);
-            edge[ec++] = pAB;
+            ec = ec + 1;
+            edge[ec] = pAB;
 
             Point pBC = lerp(B, C, u);
-            edge[ec++] = pBC;
+            ec = ec + 1;
+            edge[ec] = pBC;
 
             Point pCA = lerp(C, A, u);
-            edge[ec++] = pCA;
+            ec = ec + 1;
+            edge[ec] = pCA;
         }
     }
 
@@ -121,7 +124,11 @@ void generate_Em_Im(Point A, Point B, Point C, int nm,
             double v = (double) ib / nm;
 
             Point p = tri_interp(A, B, C, u, v);
-            inter[ic++] = p;
+            ic = ic + 1;
+            inter[ic] = p;
+            //ic(2) = ic(1) + 1; read ic(2);
+            //ic(3) = ic(2) + 1; read ic(3);
+            //ic(2) is write and then read
         }
     }
 
@@ -165,6 +172,12 @@ void compute_counts_and_displs(int* sendcounts, int* displs, int processes, int 
 			indexOfProcess--;
 			left--;
 		}
+
+        int indexOfProcess = processes;
+        for(int t = left; t > 0; t--){
+            indexOfProcess = indexOfProcess - 1; 
+            sendcounts[indexOfProcess] = 1;
+        }
 		//printf("\n");
 	}
 
