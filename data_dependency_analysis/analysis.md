@@ -51,7 +51,7 @@ Solution: I am precomputing values for ic. Need another loop, but it's less comp
 | indexOfProcess  | 176                       | i             | write  | 176                       | i+1           | read   | yes | FLOW   | YES (depends on prev)   |
 
 indexOfProcess as ic. We coukd elaborate a strategy.
-indexOfProcess is processes-1-left-t
+indexOfProcess is processes-1-left+t
 
 # Counts and Displs computation 2
 

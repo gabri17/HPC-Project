@@ -17,6 +17,16 @@
 4) Benchmarking.
 - Explain how we increase the size of the problem: function more complex.
 - We do benchmarking of both implementation (multiple runs, means, std devand confidence intervals of execution times, speedup and efficiency):
-- - same size, incraese processors (strong scalability)
-- - size increasing according in how processors are increasing (weak scalability)
-- Plots.
+- - same size, incraese processors (strong scalability: E is going to decrease, if it decreases nto fast it is strongly scalable)
+- - size increasing according in how processors are increasing (weak scalability, if efficiency is the same: weakly scalable)
+- Plots. Eff vs processes, Speedup vs processes. Different lines, different sizes.
+
+- Tserial is run-time of the fastest program.
+- In other words, if we increase the problem size at the same rate that we increase the number of processes/threads, then the efficiency will be unchanged, and our program is scalable.
+- To take time, do a Barrier.
+- So instead of reporting the mean or median time, we usually report the minimum time.
+- - When we’re timing programs, we usually tell the compiler to optimize the code by using the −O2 option.
+- - To take times not only on the master process, but on all the processes and consier the maximum. Pagina 143 pdf.
+
+Benchmarking 1 process multiple thread: speedup dividing number of thread.
+Benchmarking n processes x threads: speedup dividing n.
