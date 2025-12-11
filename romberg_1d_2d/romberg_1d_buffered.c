@@ -6,134 +6,191 @@
 #define BUFFER_SIZE 500
 #define TAG_WORK 1
 #define TAG_STOP 2
+#define TAG_RESULT 3
+#define NUM_ROWS 5
 
-double f(double x)
+double heavy_f(double x, double y)
 {
-    return sin(x);
+
+    const int ITER = 1000000;
+
+    double dummy = 0;
+    int i;
+    for (i = 0; i < ITER; i++)
+    {
+        dummy += 1 / pow(x, 2) + 1 / pow(y, 2) + 1;
+    }
+    double result = pow(x, 5) + pow(y, 5);
+    return result;
 }
 
 int main(int argc, char **argv)
 {
     int rank, size;
     double a = 0.0, b = M_PI;
-    int n = 15;
     double **R = NULL;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    if (size < 2)
+    double start_time = MPI_Wtime();
+
+    if (size == 1)
     {
-        printf("Error: This Master-Worker model requires at least 2 processes.\n");
-        MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-
-    if (rank == 0)
-    {
-        R = (double **)malloc(n * sizeof(double *));
-        for (int i = 0; i < n; i++)
-            R[i] = (double *)malloc(n * sizeof(double));
-
-        double h = b - a;
-        R[0][0] = 0.5 * h * (f(a) + f(b));
-        printf("Row 0: %f\n", R[0][0]);
-
-        for (int i = 1; i < n; i++)
+        if (rank == 0)
         {
-            long long num_new_points = (1LL << (i - 1));
-            double h_i = (b - a) / (double)(1LL << i);
+            printf("Running in SERIAL mode (N=1). Printing Full Matrix...\n");
+            printf("-------------------------------------------------------------\n");
 
-            double buffer[BUFFER_SIZE];
-            int count = 0;
-            int dest_worker = 1;
+            R = (double **)malloc(NUM_ROWS * sizeof(double *));
+            for (int i = 0; i < NUM_ROWS; i++)
+                R[i] = (double *)malloc(NUM_ROWS * sizeof(double));
 
-            for (long long k = 1; k <= num_new_points; k++)
+            double h = b - a;
+            R[0][0] = 0.5 * h * (heavy_f(a) + heavy_f(b));
+
+            // Print Row 0
+            printf("Row  0 | %10.6f\n", R[0][0]);
+
+            for (int i = 1; i < NUM_ROWS; i++)
             {
-                double x = a + (2 * k - 1) * h_i;
-                buffer[count++] = x;
-
-                if (count == BUFFER_SIZE)
+                long long num_new_points = (1LL << (i - 1));
+                double h_i = (b - a) / (double)(1LL << i);
+                double sum = 0.0;
+                for (long long k = 1; k <= num_new_points; k++)
                 {
-                    MPI_Send(buffer, BUFFER_SIZE, MPI_DOUBLE, dest_worker, TAG_WORK, MPI_COMM_WORLD);
-                    dest_worker++;
-                    if (dest_worker >= size)
-                        dest_worker = 1;
-
-                    count = 0;
+                    double x = a + (2 * k - 1) * h_i;
+                    sum += heavy_f(x);
                 }
+                R[i][0] = 0.5 * R[i - 1][0] + sum * h_i;
+                double factor = 4.0;
+                for (int j = 1; j <= i; j++)
+                {
+                    R[i][j] = R[i][j - 1] + (R[i][j - 1] - R[i - 1][j - 1]) / (factor - 1.0);
+                    factor *= 4.0;
+                }
+
+                printf("Row %2d | ", i);
+                for (int j = 0; j <= i; j++)
+                {
+                    printf("%10.6f ", R[i][j]);
+                }
+                printf("\n");
             }
 
-            if (count > 0)
-            {
-                MPI_Send(buffer, count, MPI_DOUBLE, dest_worker, TAG_WORK, MPI_COMM_WORLD);
-                dest_worker++;
-                if (dest_worker >= size)
-                    dest_worker = 1;
-            }
-
-            for (int w = 1; w < size; w++)
-            {
-                MPI_Send(NULL, 0, MPI_DOUBLE, w, TAG_STOP, MPI_COMM_WORLD);
-            }
-
-            double total_row_sum = 0.0;
-            for (int w = 1; w < size; w++)
-            {
-                double worker_sum = 0.0;
-                MPI_Recv(&worker_sum, 1, MPI_DOUBLE, w, TAG_RESULT, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                total_row_sum += worker_sum;
-            }
-
-            R[i][0] = 0.5 * R[i - 1][0] + total_row_sum * h_i;
-
-            double factor = 4.0;
-            for (int j = 1; j <= i; j++)
-            {
-                R[i][j] = R[i][j - 1] + (R[i][j - 1] - R[i - 1][j - 1]) / (factor - 1.0);
-                factor *= 4.0;
-            }
-
-            printf("Row %d Result: %.10f\n", i, R[i][i]);
+            for (int i = 0; i < NUM_ROWS; i++)
+                free(R[i]);
+            free(R);
         }
-
-        for (int i = 0; i < n; i++)
-            free(R[i]);
-        free(R);
     }
     else
     {
-        while (1)
+        if (rank == 0)
         {
+            printf("Running in PARALLEL mode (N=%d). Printing Full Matrix...\n", size);
+            printf("-------------------------------------------------------------\n");
 
-            break;
-        }
+            R = (double **)malloc(NUM_ROWS * sizeof(double *));
+            for (int i = 0; i < NUM_ROWS; i++)
+                R[i] = (double *)malloc(NUM_ROWS * sizeof(double));
 
-        for (int i = 1; i < n; i++)
-        {
-            double row_partial_sum = 0.0;
-            double buffer[BUFFER_SIZE];
-            MPI_Status status;
+            double h = b - a;
+            R[0][0] = 0.5 * h * (heavy_f(a) + heavy_f(b));
 
-            while (1)
+            // Print Row 0
+            printf("Row  0 | %10.6f\n", R[0][0]);
+
+            for (int i = 1; i < NUM_ROWS; i++)
             {
-                MPI_Recv(buffer, BUFFER_SIZE, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                long long num_new_points = (1LL << (i - 1));
+                double h_i = (b - a) / (double)(1LL << i);
 
-                if (status.MPI_TAG == TAG_STOP)
-                {
-                    break;
-                }
-                int count;
-                MPI_Get_count(&status, MPI_DOUBLE, &count);
+                double buffer[BUFFER_SIZE];
+                int count = 0;
+                int dest_worker = 1;
 
-                for (int k = 0; k < count; k++)
+                for (long long k = 1; k <= num_new_points; k++)
                 {
-                    row_partial_sum += f(buffer[k]);
+                    double x = a + (2 * k - 1) * h_i;
+                    buffer[count++] = x;
+
+                    if (count == BUFFER_SIZE)
+                    {
+                        MPI_Send(buffer, BUFFER_SIZE, MPI_DOUBLE, dest_worker, TAG_WORK, MPI_COMM_WORLD);
+                        dest_worker++;
+                        if (dest_worker >= size)
+                            dest_worker = 1;
+                        count = 0;
+                    }
                 }
+
+                if (count > 0)
+                {
+                    MPI_Send(buffer, count, MPI_DOUBLE, dest_worker, TAG_WORK, MPI_COMM_WORLD);
+                    dest_worker++;
+                    if (dest_worker >= size)
+                        dest_worker = 1;
+                }
+
+                for (int w = 1; w < size; w++)
+                    MPI_Send(NULL, 0, MPI_DOUBLE, w, TAG_STOP, MPI_COMM_WORLD);
+
+                double total_row_sum = 0.0;
+                for (int w = 1; w < size; w++)
+                {
+                    double worker_sum = 0.0;
+                    MPI_Recv(&worker_sum, 1, MPI_DOUBLE, w, TAG_RESULT, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    total_row_sum += worker_sum;
+                }
+
+                R[i][0] = 0.5 * R[i - 1][0] + total_row_sum * h_i;
+
+                double factor = 4.0;
+                for (int j = 1; j <= i; j++)
+                {
+                    R[i][j] = R[i][j - 1] + (R[i][j - 1] - R[i - 1][j - 1]) / (factor - 1.0);
+                    factor *= 4.0;
+                }
+
+                printf("Row %2d | ", i);
+                for (int j = 0; j <= i; j++)
+                {
+                    printf("%10.6f ", R[i][j]);
+                }
+                printf("\n");
             }
 
-            MPI_Send(&row_partial_sum, 1, MPI_DOUBLE, 0, TAG_RESULT, MPI_COMM_WORLD);
+            for (int i = 0; i < NUM_ROWS; i++)
+                free(R[i]);
+            free(R);
         }
+        else
+        {
+            for (int i = 1; i < NUM_ROWS; i++)
+            {
+                double row_partial_sum = 0.0;
+                double buffer[BUFFER_SIZE];
+                MPI_Status status;
+                while (1)
+                {
+                    MPI_Recv(buffer, BUFFER_SIZE, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                    if (status.MPI_TAG == TAG_STOP)
+                        break;
+                    int count;
+                    MPI_Get_count(&status, MPI_DOUBLE, &count);
+                    for (int k = 0; k < count; k++)
+                        row_partial_sum += heavy_f(buffer[k]);
+                }
+                MPI_Send(&row_partial_sum, 1, MPI_DOUBLE, 0, TAG_RESULT, MPI_COMM_WORLD);
+            }
+        }
+    }
+
+    double end_time = MPI_Wtime();
+    if (rank == 0)
+    {
+        printf("\nTotal Execution Time: %f seconds\n", end_time - start_time);
     }
 
     MPI_Finalize();
