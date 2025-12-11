@@ -5,11 +5,5 @@
 # set the queue
 #PBS -q short_cpuQ
 
-# Export environment variables to MPI ranks
-#PBS -V
-
-export ITER=1000000
-
 module load mpich-3.2
-mpirun.actual -n 32 ./proj/my_parallel 2 1 4 2.5 6 0.75
-#4 2 8 5 12 1.5
+mpirun.actual -n 32 ./HPC-Project/romberg_1d_2d/romberg_2d_buffered_heavy

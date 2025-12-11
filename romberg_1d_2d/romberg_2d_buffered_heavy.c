@@ -3,8 +3,8 @@
 #include <math.h>
 #include <mpi.h>
 
-#define BUFFER_SIZE 200
-#define MAX_LEVEL 15
+#define BUFFER_SIZE 500
+#define MAX_LEVEL 8
 
 #define TAG_EDGE_DATA 1
 #define TAG_INT_DATA 2
@@ -31,13 +31,15 @@ typedef struct
 double heavy_f(double x, double y)
 {
 
-    double junk_math = 0.0;
-    for (int k = 0; k < 100; k++)
-    {
-        junk_math += sqrt(x * k + 1.0) + log(y * k + 2.0);
-    }
+    const int ITER = 1000000;
 
-    return (sin(x * 100.0) * cos(y * 100.0)) + (junk_math * 1e-15);
+    double dummy = 0;
+    int i;
+    for(i=0; i < ITER; i++){
+        dummy += 1/pow(x, 2) + 1/pow(y, 2) + 1;
+    }
+    double result = pow(x, 5) + pow(y, 5);
+    return result;
 }
 
 void master_code(int size, Point v1, Point v2, Point v3)
@@ -110,13 +112,13 @@ void master_code(int size, Point v1, Point v2, Point v3)
         R[m][0] = (area / (3.0 * (double)(nm * nm))) * term;
 
         double factor = 4.0;
+        printf("\nR[%d] = %f ", m, R[m][0]);
         for (int k = 1; k <= m; k++)
         {
-            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (factor - 1.0);
+            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (pow(2, k) - 1.0);
             factor *= 4.0;
+            printf("%f ", R[m][k]);
         }
-
-        printf("Level %d Result: %.10f\n", m, R[m][m]);
     }
 
     for (int i = 0; i < MAX_LEVEL; i++)
@@ -205,12 +207,13 @@ void serial_code(Point v1, Point v2, Point v3)
         R[m][0] = (area / (3.0 * (double)(nm * nm))) * term;
 
         double factor = 4.0;
+        printf("R[%d] = %f ", m, R[m][0]);
         for (int k = 1; k <= m; k++)
         {
-            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (factor - 1.0);
+            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (pow(2, k) - 1.0);
             factor *= 4.0;
+            printf("%f ", R[m][k]);
         }
-        printf("Level %d Result: %.10f\n", m, R[m][m]);
     }
 
     for (int i = 0; i < MAX_LEVEL; i++)
@@ -225,9 +228,9 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    Point v1 = {0.0, 0.0};
-    Point v2 = {1.0, 0.0};
-    Point v3 = {0.0, 1.0};
+    Point v1 = {2.0, 1.0};
+    Point v2 = {4.0, 2.5};
+    Point v3 = {6.0, 0.75};
 
     double start = MPI_Wtime();
 
@@ -249,7 +252,7 @@ int main(int argc, char **argv)
 
     double end = MPI_Wtime();
     if (rank == 0)
-        printf("Processes: %d | Time: %f seconds\n", size, end - start);
+        printf("\nProcesses: %d | Time: %f seconds\n", size, end - start);
 
     MPI_Finalize();
     return 0;
