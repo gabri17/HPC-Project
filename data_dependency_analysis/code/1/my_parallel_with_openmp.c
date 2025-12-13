@@ -269,23 +269,19 @@ int main(int argc, char* argv[]){
     //INPUT PREPARATION
     double** R = NULL;
     double startTime = 0;
-    if(rank == 0){
-        R = malloc(MaxLevel * sizeof(double*));
+    R = malloc(MaxLevel * sizeof(double*));
         
-        size_t i;
-        for(i = 0; i < MaxLevel; i++){
-            R[i] = malloc(MaxLevel * sizeof(double));
-        }
-        startTime = MPI_Wtime();
+    size_t i;
+    for(i = 0; i < MaxLevel; i++){
+        R[i] = malloc(MaxLevel * sizeof(double));
     }
+    startTime = MPI_Wtime();
     
     double area = 0.5 * fabs(A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
     double sumC = 0;
-    if(rank == 0){
-        printf("Area is %f\n", area);
-        //we do it only here, to avoid repetitions at each loop iteration
-        sumC = f(A.x, A.y) + f(B.x, B.y) + f(C.x, C.y);
-    }
+    printf("Area is %f\n", area);
+    //we do it only here, to avoid repetitions at each loop iteration
+    sumC = f(A.x, A.y) + f(B.x, B.y) + f(C.x, C.y);
     
     int m;
     for(m = 0; m < MaxLevel; m++){
@@ -298,33 +294,19 @@ int main(int argc, char* argv[]){
         double sumE = 0, sumI = 0; //C, Em, Im
         Point *E = NULL, *I = NULL;
 
-        int sendcounts[processes], displs[processes];
         int Ec = 0, Ic = 0;
 
-        if(rank == 0){
-            //edge and interior nodes computation
-            generate_Em_Im(A, B, C, (int) n_m, &E, &Ec, &I, &Ic);
-            printf("m=%d  nm=%f triangles=%d edge_count (excluding vertices)=%d  interior_count=%d\n", m, n_m, triangles, Ec, Ic);
-
-		    compute_counts_and_displs(&sendcounts[0], &displs[0], processes, Ec);
-        }
+        //edge and interior nodes computation
+        generate_Em_Im(A, B, C, (int) n_m, &E, &Ec, &I, &Ic);
+        printf("m=%d  nm=%f triangles=%d edge_count (excluding vertices)=%d  interior_count=%d\n", m, n_m, triangles, Ec, Ic);
 
         int maxE = (n_m >= 1) ? (3 * n_m - 3) : 0;
         //here must happen the scatter magic
-        int local_length = compute_local_length(processes, rank, maxE);
-        Point* local_E = malloc(sizeof(Point) * local_length);
-        MPI_Scatterv(E, sendcounts, displs, MPI_POINT, local_E, local_length, MPI_POINT, 0, MPI_COMM_WORLD);
 
-        double local_sum = 0;
-        #pragma omp parallel for reduction(+: local_sum)
-        for(int indx = 0; indx < local_length; indx++){
-            local_sum += f(local_E[indx].x, local_E[indx].y);
-        }
-        MPI_Reduce(&local_sum, &sumE, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-        free(local_E);
-
-        if(rank == 0){
-		    compute_counts_and_displs(&sendcounts[0], &displs[0], processes, Ic);
+        sumE = 0;
+        #pragma omp parallel for reduction(+: sumE)
+        for(int indx = 0; indx < maxE; indx++){
+            sumE += f(E[indx].x, E[indx].y);
         }
 
         int total_pts = (n_m + 1) * (n_m + 2) / 2;
@@ -332,61 +314,48 @@ int main(int argc, char* argv[]){
         if(maxI < 0){
             maxI = 0;
         }
-        local_length = compute_local_length(processes, rank, maxI);
-        Point* local_I = malloc(sizeof(Point) * local_length);
-        MPI_Scatterv(I, sendcounts, displs, MPI_POINT, local_I, local_length, MPI_POINT, 0, MPI_COMM_WORLD);
 
-        local_sum = 0;
-        #pragma omp parallel for reduction(+: local_sum)
-        for(int indx = 0; indx < local_length; indx++){
-            local_sum += f(local_I[indx].x, local_I[indx].y);
+        sumI = 0;
+        #pragma omp parallel for reduction(+: sumI)
+        for(int indx = 0; indx < maxI; indx++){
+            sumI += f(I[indx].x, I[indx].y);
         }
-        MPI_Reduce(&local_sum, &sumI, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-
-        free(local_I);
     
-        if(rank == 0){
-            sumE*=3.0;
-            sumI*=6.0;
-            //last formula computation
-            acc = (area / (3.0 * triangles)) * (sumC + sumE + sumI);
-            R[m][0] = acc;
+        sumE*=3.0;
+        sumI*=6.0;
+        //last formula computation
+        acc = (area / (3.0 * triangles)) * (sumC + sumE + sumI);
+        R[m][0] = acc;
 
-            printf("R[%d][0] = %f\n", m, R[m][0]);
-            free(E);
-            free(I);
-            printf("\n");       
-        }
-
+        printf("R[%d][0] = %f\n", m, R[m][0]);
+        free(E);
+        free(I);
+        printf("\n");       
     }
 
-    if(rank == 0){
-        //Richardson Extraploation
-        printf("R[0]: %f\n", R[0][0]);
-        int m;
-        for(m = 1; m < MaxLevel; m++){
-            //compute R[m][1], R[m][2], ..., R[m][m]
-            printf("R[%d]: %f ", m, R[m][0]);
-            int k;
-            for(k = 1; k <= m; k++){    
-                R[m][k] = R[m][k-1] + (-R[m-1][k-1] + R[m][k-1]) / (pow(2, k) - 1); //on the paper sign into the () are opposite
-                printf("%f ", R[m][k]);
-            }
-            printf("\n");
+    //Richardson Extraploation
+    printf("R[0]: %f\n", R[0][0]);
+    for(m = 1; m < MaxLevel; m++){
+        //compute R[m][1], R[m][2], ..., R[m][m]
+        printf("R[%d]: %f ", m, R[m][0]);
+        int k;
+        for(k = 1; k <= m; k++){    
+            R[m][k] = R[m][k-1] + (-R[m-1][k-1] + R[m][k-1]) / (pow(2, k) - 1); //on the paper sign into the () are opposite
+            printf("%f ", R[m][k]);
         }
-
-        //deallocation of R
-        size_t i;
-        for(i = 0; i < MaxLevel; i++){
-            free(R[i]);
-        }
-        free(R);
-
-        double endTime = MPI_Wtime();
-        printf("Time elapsed %f, %d processors, %d threads per processor, complexity %d, A(%f, %f), B(%f, %f), C(%f, %f)", 
-        endTime - startTime, processes, getThreadsNo(), getProblemSize(), A.x, A.y, B.x, B.y, C.x, C.y
-        );
+        printf("\n");
     }
+
+    //deallocation of R
+    for(i = 0; i < MaxLevel; i++){
+        free(R[i]);
+    }
+    free(R);
+
+    double endTime = MPI_Wtime();
+    printf("Time elapsed %f, %d processors, %d threads per processor, complexity %d, A(%f, %f), B(%f, %f), C(%f, %f)", 
+    endTime - startTime, processes, getThreadsNo(), getProblemSize(), A.x, A.y, B.x, B.y, C.x, C.y
+    );
 
 	MPI_Type_free(&MPI_POINT);
     MPI_Finalize();
