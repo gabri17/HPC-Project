@@ -3,57 +3,140 @@
 #include <math.h>
 #include <mpi.h>
 
-#define BUFFER_SIZE 500
+#define BUFFER_SIZE 5
 #define MAX_LEVEL 8
 
-#define TAG_EDGE_DATA 1
-#define TAG_INT_DATA 2
-#define TAG_STOP 3
-#define TAG_RESULT 4
+#define TAG_WORK_CHUNK 1
+#define TAG_STOP 2
+#define TAG_RESULT 3
 
 typedef struct
 {
     double x;
     double y;
 } Point;
+
 typedef struct
 {
     int count;
     double u[BUFFER_SIZE];
     double v[BUFFER_SIZE];
 } NodeBuffer;
+
 typedef struct
 {
     double sum_edge;
     double sum_interior;
 } WorkerResult;
 
+double **allocate_matrix(int n)
+{
+    double **mat = (double **)malloc(n * sizeof(double *));
+    for (int i = 0; i < n; i++)
+        mat[i] = (double *)calloc(n, sizeof(double));
+    return mat;
+}
+
+void free_matrix(double **mat, int n)
+{
+    for (int i = 0; i < n; i++)
+        free(mat[i]);
+    free(mat);
+}
+
 double heavy_f(double x, double y)
 {
-
     const int ITER = 1000000;
-
     double dummy = 0;
-    int i;
-    for (i = 0; i < ITER; i++)
+
+    for (int i = 0; i < ITER; i++)
     {
-        dummy += 1 / pow(x, 2) + 1 / pow(y, 2) + 1;
+        dummy += 1.0 / (pow(x, 2) + 1.0) + 1.0 / (pow(y, 2) + 1.0);
     }
-    double result = pow(x, 5) + pow(y, 5);
+
+    double result = pow(x, 5) + pow(y, 5) + (dummy * 1.0e-15);
     return result;
+}
+
+void serial_code(Point v1, Point v2, Point v3)
+{
+    printf("Running in SERIAL mode (N=1)...\n");
+    printf("-------------------------------------------------------------\n");
+
+    double **R = allocate_matrix(MAX_LEVEL);
+
+    // 1. Level 0 (Vertices)
+    double area = 0.5 * fabs((v2.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v1.y));
+    double sum_verts = heavy_f(v1.x, v1.y) + heavy_f(v2.x, v2.y) + heavy_f(v3.x, v3.y);
+    R[0][0] = (area / 3.0) * sum_verts;
+    printf("Row  0 | %10.6f\n", R[0][0]);
+
+    double total_sum_edges = 0.0;
+    double total_sum_interior = 0.0;
+
+    // 2. Loop over levels
+    for (int m = 1; m < MAX_LEVEL; m++)
+    {
+        long long nm = (1LL << m);
+
+        // Serial computation of nodes
+        for (long long i = 0; i <= nm; i++)
+        {
+            for (long long j = 0; j <= nm - i; j++)
+            {
+                if ((i == 0 && j == 0) || (i == nm && j == 0) || (i == 0 && j == nm))
+                    continue;
+                if (i % 2 == 0 && j % 2 == 0)
+                    continue;
+
+                // Transform Coordinate
+                double u = (double)i / (double)nm;
+                double v = (double)j / (double)nm;
+                double px = v1.x + u * (v2.x - v1.x) + v * (v3.x - v1.x);
+                double py = v1.y + u * (v2.y - v1.y) + v * (v3.y - v1.y);
+
+                double val = heavy_f(px, py);
+
+                double eps = 1e-9;
+                if (u < eps || v < eps || (u + v) > (1.0 - eps))
+                    total_sum_edges += val;
+                else
+                    total_sum_interior += val;
+            }
+        }
+
+        // Update Column 0
+        double term = sum_verts + 3.0 * total_sum_edges + 6.0 * total_sum_interior;
+        R[m][0] = (area / (3.0 * (double)(nm * nm))) * term;
+
+        // Richardson Extrapolation
+        double factor = 4.0;
+        for (int k = 1; k <= m; k++)
+        {
+            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (factor - 1.0);
+            factor *= 4.0;
+        }
+
+        // Print Matrix Row
+        printf("Row %2d | ", m);
+        for (int k = 0; k <= m; k++)
+            printf("%10.6f ", R[m][k]);
+        printf("\n");
+    }
+    free_matrix(R, MAX_LEVEL);
 }
 
 void master_code(int size, Point v1, Point v2, Point v3)
 {
-    double **R = (double **)malloc(MAX_LEVEL * sizeof(double *));
-    for (int i = 0; i < MAX_LEVEL; i++)
-        R[i] = (double *)calloc(MAX_LEVEL, sizeof(double));
+    printf("Running in PARALLEL mode (N=%d)...\n", size);
+    printf("-------------------------------------------------------------\n");
+
+    double **R = allocate_matrix(MAX_LEVEL);
 
     double area = 0.5 * fabs((v2.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v1.y));
-
     double sum_verts = heavy_f(v1.x, v1.y) + heavy_f(v2.x, v2.y) + heavy_f(v3.x, v3.y);
     R[0][0] = (area / 3.0) * sum_verts;
-    printf("Level 0 Result: %.10f\n", R[0][0]);
+    printf("Row  0 | %10.6f\n", R[0][0]);
 
     double total_sum_edges = 0.0;
     double total_sum_interior = 0.0;
@@ -61,11 +144,11 @@ void master_code(int size, Point v1, Point v2, Point v3)
     for (int m = 1; m < MAX_LEVEL; m++)
     {
         long long nm = (1LL << m);
-
         NodeBuffer buffer;
         buffer.count = 0;
         int dest_worker = 1;
 
+        // Distribute Work
         for (long long i = 0; i <= nm; i++)
         {
             for (long long j = 0; j <= nm - i; j++)
@@ -81,7 +164,7 @@ void master_code(int size, Point v1, Point v2, Point v3)
 
                 if (buffer.count == BUFFER_SIZE)
                 {
-                    MPI_Send(&buffer, sizeof(NodeBuffer), MPI_BYTE, dest_worker, TAG_EDGE_DATA, MPI_COMM_WORLD);
+                    MPI_Send(&buffer, sizeof(NodeBuffer), MPI_BYTE, dest_worker, TAG_WORK_CHUNK, MPI_COMM_WORLD);
                     buffer.count = 0;
                     dest_worker++;
                     if (dest_worker >= size)
@@ -89,18 +172,19 @@ void master_code(int size, Point v1, Point v2, Point v3)
                 }
             }
         }
-
         if (buffer.count > 0)
         {
-            MPI_Send(&buffer, sizeof(NodeBuffer), MPI_BYTE, dest_worker, TAG_EDGE_DATA, MPI_COMM_WORLD);
+            MPI_Send(&buffer, sizeof(NodeBuffer), MPI_BYTE, dest_worker, TAG_WORK_CHUNK, MPI_COMM_WORLD);
             dest_worker++;
             if (dest_worker >= size)
                 dest_worker = 1;
         }
 
+        // Synchronization
         for (int w = 1; w < size; w++)
             MPI_Send(NULL, 0, MPI_BYTE, w, TAG_STOP, MPI_COMM_WORLD);
 
+        // Collect Results
         for (int w = 1; w < size; w++)
         {
             WorkerResult res;
@@ -109,22 +193,25 @@ void master_code(int size, Point v1, Point v2, Point v3)
             total_sum_interior += res.sum_interior;
         }
 
+        // Update Table
         double term = sum_verts + 3.0 * total_sum_edges + 6.0 * total_sum_interior;
         R[m][0] = (area / (3.0 * (double)(nm * nm))) * term;
 
+        // Extrapolation
         double factor = 4.0;
-        printf("\nR[%d] = %f ", m, R[m][0]);
         for (int k = 1; k <= m; k++)
         {
-            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (pow(2, k) - 1.0);
+            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (factor - 1.0);
             factor *= 4.0;
-            printf("%f ", R[m][k]);
         }
-    }
 
-    for (int i = 0; i < MAX_LEVEL; i++)
-        free(R[i]);
-    free(R);
+        // Print Matrix Row
+        printf("Row %2d | ", m);
+        for (int k = 0; k <= m; k++)
+            printf("%10.6f ", R[m][k]);
+        printf("\n");
+    }
+    free_matrix(R, MAX_LEVEL);
 }
 
 void worker_code(int rank, Point v1, Point v2, Point v3)
@@ -165,63 +252,6 @@ void worker_code(int rank, Point v1, Point v2, Point v3)
     }
 }
 
-void serial_code(Point v1, Point v2, Point v3)
-{
-    double **R = (double **)malloc(MAX_LEVEL * sizeof(double *));
-    for (int i = 0; i < MAX_LEVEL; i++)
-        R[i] = (double *)calloc(MAX_LEVEL, sizeof(double));
-
-    double area = 0.5 * fabs((v2.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v1.y));
-    double sum_verts = heavy_f(v1.x, v1.y) + heavy_f(v2.x, v2.y) + heavy_f(v3.x, v3.y);
-    R[0][0] = (area / 3.0) * sum_verts;
-    printf("Level 0 Result: %.10f\n", R[0][0]);
-
-    double total_sum_edges = 0.0;
-    double total_sum_interior = 0.0;
-
-    for (int m = 1; m < MAX_LEVEL; m++)
-    {
-        long long nm = (1LL << m);
-        for (long long i = 0; i <= nm; i++)
-        {
-            for (long long j = 0; j <= nm - i; j++)
-            {
-                if ((i == 0 && j == 0) || (i == nm && j == 0) || (i == 0 && j == nm))
-                    continue;
-                if (i % 2 == 0 && j % 2 == 0)
-                    continue;
-
-                double u = (double)i / (double)nm;
-                double v = (double)j / (double)nm;
-                double px = v1.x + u * (v2.x - v1.x) + v * (v3.x - v1.x);
-                double py = v1.y + u * (v2.y - v1.y) + v * (v3.y - v1.y);
-                double val = heavy_f(px, py);
-
-                double eps = 1e-9;
-                if (u < eps || v < eps || (u + v) > (1.0 - eps))
-                    total_sum_edges += val;
-                else
-                    total_sum_interior += val;
-            }
-        }
-        double term = sum_verts + 3.0 * total_sum_edges + 6.0 * total_sum_interior;
-        R[m][0] = (area / (3.0 * (double)(nm * nm))) * term;
-
-        double factor = 4.0;
-        printf("R[%d] = %f ", m, R[m][0]);
-        for (int k = 1; k <= m; k++)
-        {
-            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (pow(2, k) - 1.0);
-            factor *= 4.0;
-            printf("%f ", R[m][k]);
-        }
-    }
-
-    for (int i = 0; i < MAX_LEVEL; i++)
-        free(R[i]);
-    free(R);
-}
-
 int main(int argc, char **argv)
 {
     int rank, size;
@@ -238,9 +268,7 @@ int main(int argc, char **argv)
     if (size == 1)
     {
         if (rank == 0)
-        {
             serial_code(v1, v2, v3);
-        }
     }
     else
     {
