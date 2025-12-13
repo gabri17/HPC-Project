@@ -11,7 +11,6 @@ int getProblemSize(){
     } else {
         return atoi(iter_str);
     }
-
 }
 
 double f(double x, double y) {
@@ -20,10 +19,14 @@ double f(double x, double y) {
 
     double dummy = 0;
     int i;
-    for(i=0; i < ITER; i++){
-        dummy += 1/pow(x, 2) + 1/pow(y, 2) + 1;
+    for (i = 0; i < ITER; i++){
+        dummy += 1.0 / (pow(x, 2) + 1.0) + 1.0 / (pow(y, 2) + 1.0);
     }
-    double result = pow(x, 5) + pow(y, 5);
+
+    // The actual math result: x^5
+    // We add (dummy * 1e-15) so the compiler does NOT optimize away the loop above.
+    // It is too small to change the actual answer but forces the CPU to do the work.
+    double result = pow(x, 5) + pow(y, 5) + (dummy * 1e-15);
     return result;
 }
 
@@ -143,6 +146,8 @@ void generate_Em_Im(Point A, Point B, Point C, int nm,
 
 
 //auxiliary functions for nodes distribution
+
+//for a process of that rank it computes how many elements it has to manage
 int compute_local_length(int processes, int rank, int total_length) {
 	int local_length = total_length / processes;
 
@@ -156,6 +161,9 @@ int compute_local_length(int processes, int rank, int total_length) {
 	return local_length;
 }
 
+//we compute sendcounts (how many elements each process should manage), 
+//displs (offset representing first element each process will manage)
+//having total_length (total number of elements to distribute) and processes (number of processes we can leverage on)
 void compute_counts_and_displs(int* sendcounts, int* displs, int processes, int total_length){
     int j;
     for(j = 0; j < processes; j++){
@@ -165,30 +173,22 @@ void compute_counts_and_displs(int* sendcounts, int* displs, int processes, int 
 
 	int local_length = total_length / processes;
 	if((total_length % processes) != 0){
-		//alcuni ne avranno 1 in + (sicuramente saranno < di processes)
+		//some will have 1 more (surely these processes will be less than #processes)
 		int indexOfProcess = processes-1;
 		int left = total_length - (processes*local_length);
-		//printf("Chi ne ha di piu: ");
 		while(indexOfProcess >= 0 && left > 0){
 			sendcounts[indexOfProcess] = 1;
-			//printf("%d ", indexOfProcess);
 			indexOfProcess--;
 			left--;
 		}
-		//printf("\n");
 	}
 
 	displs[0] = 0;
 	sendcounts[0] = local_length;
-	//printf("Primo valore: 0-%d ", sendcounts[0] + displs[0] - 1);
 	for(j = 1; j < processes; j++){
 		sendcounts[j] += local_length;
 		displs[j] = sendcounts[j-1] + displs[j-1];
-		//processo 0 i primi local_length, 1 i secondi local_length
-		//from rank * local_length to (rank+1) * local_length - 1
-		//printf("%d-%d ", displs[j], displs[j] + sendcounts[j] - 1);
 	}
-	//printf("\n");
 }
 
 int main(int argc, char* argv[]){
@@ -223,7 +223,6 @@ int main(int argc, char* argv[]){
     Point B = {atof(argv[paramIndx++]), atof(argv[paramIndx++]),};
     Point C = {atof(argv[paramIndx++]), atof(argv[paramIndx++]),};
 
-
     //INPUT PREPARATION
     double** R = NULL;
     double startTime = 0;
@@ -238,9 +237,11 @@ int main(int argc, char* argv[]){
     }
     
     double area = 0.5 * fabs(A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
+    double sumC = 0;
     if(rank == 0){
         printf("Area is %f\n", area);
-        //R[0][0] =  (area / 3.0) * (f(A.x, A.y) + f(B.x, B.y) + f(C.x, C.y));
+        //we do it only here, to avoid repetitions at each loop iteration
+        sumC = f(A.x, A.y) + f(B.x, B.y) + f(C.x, C.y);
     }
     
     int m;
@@ -251,16 +252,13 @@ int main(int argc, char* argv[]){
         double n_m = (double) (1 << m);
         int triangles = (int) (pow(n_m, 2));
 
-        double sumC = 0, sumE = 0, sumI = 0; //C, Em, Im
+        double sumE = 0, sumI = 0; //C, Em, Im
         Point *E = NULL, *I = NULL;
 
         int sendcounts[processes], displs[processes];
         int Ec = 0, Ic = 0;
 
         if(rank == 0){
-            //first sum member
-            sumC += f(A.x, A.y) + f(B.x, B.y) + f(C.x, C.y);
-
             //edge and interior nodes computation
             generate_Em_Im(A, B, C, (int) n_m, &E, &Ec, &I, &Ic);
             printf("m=%d  nm=%f triangles=%d edge_count (excluding vertices)=%d  interior_count=%d\n", m, n_m, triangles, Ec, Ic);
@@ -278,7 +276,6 @@ int main(int argc, char* argv[]){
         int indx;
         for(indx = 0; indx < local_length; indx++){
             local_sum += f(local_E[indx].x, local_E[indx].y);
-            //printf("[%d-%f-%f]\n", rank, local_EX[indx], local_EY[indx]);
         }
         MPI_Reduce(&local_sum, &sumE, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
         free(local_E);
@@ -299,7 +296,6 @@ int main(int argc, char* argv[]){
         local_sum = 0;
         for(indx = 0; indx < local_length; indx++){
             local_sum += f(local_I[indx].x, local_I[indx].y);
-            //printf("[%d-%f-%f]\n", rank, local_EX[indx], local_EY[indx]);
         }
         MPI_Reduce(&local_sum, &sumI, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
