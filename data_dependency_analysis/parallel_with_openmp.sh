@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -l select=1:ncpus=16:mem=2gb
+#PBS -l select=4:ncpus=2:mem=2gb
 # set max execution time
 #PBS -l walltime=0:10:00
 # set the queue
@@ -9,8 +9,8 @@
 #PBS -V
 
 export ITER=1000000
-export OMP_NUM_THREADS=8
+export OMP_NUM_THREADS=2
 export OMP_PLACES=threads
 
 module load openmpi-4.0.4
-mpiexec --report-bindings -np 1 --map-by node:pe=8 --bind-to core ./HPC-Project/data_dependency_analysis/parallel_with_openmp/code 2 1 4 2.5 6 0.75
+mpiexec --report-bindings -np 4 --map-by node:pe=2 --bind-to core ./HPC-Project/data_dependency_analysis/parallel_with_openmp/code 2 1 4 2.5 6 0.75
