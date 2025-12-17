@@ -229,8 +229,7 @@ void worker_code(int rank, Point v1, Point v2, Point v3)
             if (status.MPI_TAG == TAG_STOP)
                 break;
 
-            for (int k = 0; k < buffer.count; k++)
-            {
+            for (int k = 0; k < buffer.count; k++) {
                 double u = buffer.u[k];
                 double v = buffer.v[k];
                 double px = v1.x + u * (v2.x - v1.x) + v * (v3.x - v1.x);

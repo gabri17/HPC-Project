@@ -1,11 +1,12 @@
 1) Introduction
 - We describe the numerical integration problem. We explain some techinques and then we explain the Romber Method.
-- Serial code of the method in general.
 - We explain the paper we found.
+- - We prove the similarity with the Romberg's method in general.
+- We explain the two approaches used.
+- - Serial code of G algo.
+- - Pseudo of S algo.
 
 2) Parallel design.
-- We explain the serial code of the paper.
-- We prove the similarity with the Romberg's method in general.
 - We analyze data dependencies (DETAILED).
 - We show unparallelizable parts. We can address it with parallel scan.
 
@@ -15,11 +16,47 @@
 - Explain pros and cons of each strategy.
 
 4) Benchmarking.
-- Explain how we increase the size of the problem: function more complex.
-- We do benchmarking of both implementation (multiple runs, means, std devand confidence intervals of execution times, speedup and efficiency):
+- Explain how we increase the size of the problem: we make the function more complex.
+- We do benchmarking of both implementation (multiple runs, min, speedup and efficiency):
 - - same size, incraese processors (strong scalability: E is going to decrease, if it decreases nto fast it is strongly scalable)
 - - size increasing according in how processors are increasing (weak scalability, if efficiency is the same: weakly scalable)
 - Plots. Eff vs processes, Speedup vs processes. Different lines, different sizes.
+- Buffer size!
+
+B = {10, 100, 1000}
+
+Weak scal
+250k 1
+500 k 2
+1M 4
+2M 8
+4M 16
+8M 32
+16M 64
+(E should stay constat)
+
+Strong scal
+size 1
+size 2
+size 4
+size 8
+size 16
+size 32
+size 64
+(E should stay high) - E >= 0.7
+
+Concls:
+- is the code weakly scal?
+- is it strongly scal?
+- is buffer size mattering?
+- - Paper is telling no, in our case?
+
+**EXTRA**
+IDEA: > buffer size, > ex time needed. Why? Our idea is that workers take a lot to process buffer and master needs to wait until a worker finishes to send other buffers.
+- Validate by checking idle time of master process.
+
+
+
 
 - Tserial is run-time of the fastest program.
 - In other words, if we increase the problem size at the same rate that we increase the number of processes/threads, then the efficiency will be unchanged, and our program is scalable.
@@ -30,3 +67,13 @@
 
 Benchmarking 1 process multiple thread: speedup dividing number of thread.
 Benchmarking n processes x threads: speedup dividing n.
+
+
+10 MPI PROCESSES.
+m:
+- |Em| = 20
+- - 2
+- |Im| = 110
+- - 11
+
+for each, 4 threads.
