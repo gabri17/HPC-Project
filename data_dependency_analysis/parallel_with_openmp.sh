@@ -1,16 +1,18 @@
 #!/bin/bash
 #PBS -l select=4:ncpus=2:mem=2gb
-# set max execution time
 #PBS -l walltime=0:10:00
-# set the queue
 #PBS -q short_cpuQ
-
-# Export environment variables to MPI ranks
 #PBS -V
+
+# Change to the folder where you submitted the job (where 'parallel' is located)
+cd $PBS_O_WORKDIR
 
 export ITER=1000000
 export OMP_NUM_THREADS=2
-export OMP_PLACES=threads
+export OMP_PROC_BIND=TRUE
+export OMP_PLACES=cores
 
 module load openmpi-4.0.4
-mpiexec --report-bindings -np 4 --map-by node:pe=2 --bind-to core ./HPC-Project/data_dependency_analysis/parallel_with_openmp/code 2 1 4 2.5 6 0.75
+
+# Run the executable named 'parallel' in the current directory
+mpiexec --report-bindings -np 4 --map-by node:pe=2 ./parallel 2 1 4 2.5 6 0.75
