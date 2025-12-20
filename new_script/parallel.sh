@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -l select=64:ncpus=4:mem=2gb 
 #PBS -l walltime=0:15:00
-#PBS -q short_cpuQ
+#PBS -q short_HPC4DS
 #PBS -V
 
 # Change to the folder where you submitted the job (where 'parallel' is located)
