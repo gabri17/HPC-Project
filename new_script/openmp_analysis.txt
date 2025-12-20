@@ -1,0 +1,3 @@
+It's scaling very well with OpenMP.
+
+Just choose a number of threads that is tradeoff: 4.
