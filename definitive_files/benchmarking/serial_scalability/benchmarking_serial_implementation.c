@@ -382,16 +382,26 @@ int main(int argc, char *argv[]) {
         //FOURTH STEP: richardson extrapolation and computation of all remaining entries
             
         //Richardson Extrapolation
-        printf("R[0]: %f\n", R[0][0]);
+        if(indx == 0){
+            printf("R[0]: %f\n", R[0][0]);
+        }
         
         for (m = 1; m < MaxLevel; m++) {
-            printf("R[%d]: %f ", m, R[m][0]);
+            if(indx == 0){
+                printf("R[%d]: %f ", m, R[m][0]);
+            }
+
             int k;
             for (k = 1; k <= m; k++) {
                 R[m][k] = R[m][k - 1] + (-R[m - 1][k - 1] + R[m][k - 1]) / (pow(2, k) - 1);
-                printf("%f ", R[m][k]);
+                if(indx == 0){
+                    printf("%f ", R[m][k]);
+                }
             }
-            printf("\n");
+            
+            if(indx == 0){
+                printf("\n");
+            }
         }
 
         for (i = 0; i < MaxLevel; i++) {

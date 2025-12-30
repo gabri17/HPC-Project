@@ -9,9 +9,9 @@ cd $PBS_O_WORKDIR
 
 export ITER=500000
 export OMP_NUM_THREADS=16
-#export OMP_PLACES=threads # threads run on physical cores
-export OMP_PROC_BIND=TRUE
-export OMP_PLACES=cores
+export OMP_PLACES=threads # threads run on physical cores
+#export OMP_PROC_BIND=TRUE
+#export OMP_PLACES=cores
 module load mpich-3.2
 
 # Run the executable in the current directory
