@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include <omp.h>
 
+/* initial value */
+static int GLOBAL_ITER = 1000000;
+
 /*
  *   Utility function: read environment variable ITER and returns the number of iterations needed.
  *  
@@ -40,7 +43,7 @@ int getThreadsNo() {
 */
 double f(double x, double y) {
 
-    int ITER = getProblemSize();
+    int ITER = GLOBAL_ITER;
 
     double dummy = 0;
     int i;
@@ -334,7 +337,7 @@ void compute_counts_and_displs(int *sendcounts, int *displs, int processes, int 
         int left = total_length - (processes * local_length);
         int t;
 
-        #pragma omp parallel for
+        /*#pragma omp parallel for - we could parallelize it in this way, but we avoided it because it's a simple loop and it would introduce so much useless overhead */ 
         for (t = left; t > 0; t--) {
             int indexOfProcess = processes - left + t - 1;
             sendcounts[indexOfProcess] = 1;
@@ -363,6 +366,9 @@ int main(int argc, char *argv[]) {
     //then we run it EXECUTION times (taking the minimum execution time)
     int WARMUP = 1;
     int EXECUTION = 10;
+
+    //get size of the problem and store in a global variable
+    GLOBAL_ITER = getProblemSize();
 
     // Custom datatype creation
     MPI_Datatype MPI_POINT;
@@ -400,7 +406,7 @@ int main(int argc, char *argv[]) {
     };
 
     if(rank == 0){
-        printf("%d processors, %d threads per processor, complexity %d, A(%f, %f), B(%f, %f), C(%f, %f)\n", processes, getThreadsNo(), getProblemSize(), A.x, A.y, B.x, B.y, C.x, C.y);
+        printf("%d processors, %d threads per processor, complexity %d, A(%f, %f), B(%f, %f), C(%f, %f)\n", processes, getThreadsNo(), GLOBAL_ITER, A.x, A.y, B.x, B.y, C.x, C.y);
     }
 
     int indx = 0;
@@ -458,11 +464,15 @@ int main(int argc, char *argv[]) {
                 compute_counts_and_displs(&sendcounts[0], &displs[0], processes, Ec);
             }
 
-            //All processes must know the number of edge nodes in total
-            int maxE = (n_m >= 1) ? (3 * n_m - 3) : 0;
-            int local_length = compute_local_length(processes, rank, maxE);
-            Point *local_E = malloc(sizeof(Point) * local_length);
-
+            //All processes must know the number of edge nodes in total - so they can agree
+            MPI_Bcast(&Ec, 1, MPI_INT, 0, MPI_COMM_WORLD);
+            
+            int local_length = compute_local_length(processes, rank, Ec);
+            Point *local_E = NULL;
+            if(local_length > 0){
+                local_E = malloc(sizeof(Point) * local_length);
+            }
+            
             //Scatter Edge Nodes: distribution of the edge nodes to all the processes 
             MPI_Scatterv(E, sendcounts, displs, MPI_POINT, local_E, local_length, MPI_POINT, 0, MPI_COMM_WORLD);
 
@@ -482,14 +492,14 @@ int main(int argc, char *argv[]) {
                 compute_counts_and_displs(&sendcounts[0], &displs[0], processes, Ic);
             }
 
-            //All processes must know the number of interior nodes in total
-            int total_pts = (n_m + 1) * (n_m + 2) / 2;
-            int maxI = total_pts - 3 * n_m;
-            if (maxI < 0)
-                maxI = 0;
+            //All processes must know the number of interior nodes in total - so they can agree
+            MPI_Bcast(&Ic, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-            local_length = compute_local_length(processes, rank, maxI);
-            Point *local_I = malloc(sizeof(Point) * local_length);
+            local_length = compute_local_length(processes, rank, Ic);
+            Point *local_I = NULL;
+            if(local_length > 0){
+                local_I = malloc(sizeof(Point) * local_length);
+            }
 
             //Scatter Interior Nodes: distribution of the interior nodes to all the processes 
             MPI_Scatterv(I, sendcounts, displs, MPI_POINT, local_I, local_length, MPI_POINT, 0, MPI_COMM_WORLD);

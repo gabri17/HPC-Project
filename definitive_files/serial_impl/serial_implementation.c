@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include <omp.h>
 
+/* initial value */
+static int GLOBAL_ITER = 1000000;
+
 /*
  *   Utility function: read environment variable ITER and returns the number of iterations needed.
  *  
@@ -40,7 +43,7 @@ int getThreadsNo() {
 */
 double f(double x, double y) {
 
-    int ITER = getProblemSize();
+    int ITER = GLOBAL_ITER;
 
     double dummy = 0;
     int i;
@@ -281,6 +284,8 @@ int main(int argc, char *argv[]) {
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
+    //get size of the problem and store in a global variable
+    GLOBAL_ITER = getProblemSize();
 
     int MaxLevel = 8;
     int paramIndx = 1;
@@ -305,7 +310,7 @@ int main(int argc, char *argv[]) {
         atof(argv[paramIndx++]),
     };
 
-    printf("%d processors, %d threads per processor, complexity %d, A(%f, %f), B(%f, %f), C(%f, %f)\n", processes, getThreadsNo(), getProblemSize(), A.x, A.y, B.x, B.y, C.x, C.y);
+    printf("%d processors, %d threads per processor, complexity %d, A(%f, %f), B(%f, %f), C(%f, %f)\n", processes, getThreadsNo(), GLOBAL_ITER, A.x, A.y, B.x, B.y, C.x, C.y);
 
     double **R = NULL;
     double startTime = 0;
@@ -384,8 +389,9 @@ int main(int argc, char *argv[]) {
     free(R);
 
     double endTime = MPI_Wtime();
+    double elapsed = endTime - startTime;
 
-    printf("\nEXECUTION_TIME=%f", endTime - startTime);
+    printf("\nEXECUTION_TIME=%f", elapsed);
 
     MPI_Finalize();
 
