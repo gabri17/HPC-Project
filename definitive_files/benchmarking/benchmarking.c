@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
     //we run it WARMUP times, not counting performances
     //then we run it EXECUTION times (taking the minimum execution time)
     int WARMUP = 1;
-    int EXECUTION = 10;
+    int EXECUTION = 5;
 
     //get size of the problem and store in a global variable
     GLOBAL_ITER = getProblemSize();
