@@ -8,11 +8,8 @@
 module load mpich-3.2
 cd $PBS_O_WORKDIR
 
-# Assumes you have already compiled the code:
-# mpicc -std=c99 -o romberg_bench romberg_2d_bench.c -lm
 
 OUTPUT_FILE="benchmark_results_4_5run.csv"
-# Write header (overwriting old file if it exists)
 echo "Type,Complexity,BufferSize,Procs,Time" > $OUTPUT_FILE
 
 # --- 1. Strong Scalability ---

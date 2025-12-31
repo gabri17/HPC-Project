@@ -21,8 +21,7 @@ WW -> OUTPUT (Output Dependency)
 | dest_worker     | 158               | i,j       | write  | 157             | i,j+X     | read   | yes           | FLOW             | **YES** (Round-robin logic depends on prev)       |
 | MPI_Send        | 156               | i,j       | call   | 156             | i,j+X     | call   | yes           | FLOW             | **YES** (Socket access serialization)             |
 
-**Conclusion:** The Master loop is **inherently serial**. You cannot calculate which worker receives the _next_ point without knowing if the _current_ buffer is full.
-**Solution:** To parallelize this, you would need to pre-calculate the total number of points and use arithmetic indexing (like your friend's `compute_counts_and_displs`) rather than a "push-to-stack" approach.
+**Conclusion:** The Master loop is **inherently serial**. It is not possible to calculate which worker receives the _next_ point without knowing if the _current_ buffer is full.
 
 # 2. Worker: Computation Loop
 
