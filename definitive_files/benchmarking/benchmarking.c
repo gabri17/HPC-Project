@@ -215,8 +215,9 @@ void generate_Em_Im(Point A, Point B, Point C, int nm,
         ec = edge_offsets[nm - 1];
         ec += 3;
 
+        int t;
         #pragma omp parallel for
-        for (int t = 1; t <= nm - 1; ++t) {
+        for (t = 1; t <= nm - 1; ++t) {
             double u = (double)t / nm;
             int local_ec = edge_offsets[t];
 
@@ -244,8 +245,9 @@ void generate_Em_Im(Point A, Point B, Point C, int nm,
         }
         ic = interior_offsets[nm - 2] + 1;
 
+        int ia;
         #pragma omp parallel for
-        for (int ia = 1; ia <= nm - 2; ++ia) {
+        for (ia = 1; ia <= nm - 2; ++ia) {
 
             int ic_local = interior_offsets[ia];
             
@@ -478,8 +480,9 @@ int main(int argc, char *argv[]) {
 
             //Local evaluation of function f on the edge nodes assigned to the process
             double local_sum = 0;
+            int indx;
             #pragma omp parallel for reduction(+ : local_sum)
-            for (int indx = 0; indx < local_length; indx++) {
+            for (indx = 0; indx < local_length; indx++) {
                 local_sum += f(local_E[indx].x, local_E[indx].y);
             }
 
@@ -507,7 +510,7 @@ int main(int argc, char *argv[]) {
             //Local evaluation of function f on the interior nodes assigned to the process
             local_sum = 0;
             #pragma omp parallel for reduction(+ : local_sum)
-            for (int indx = 0; indx < local_length; indx++) {
+            for (indx = 0; indx < local_length; indx++) {
                 local_sum += f(local_I[indx].x, local_I[indx].y);
             }
 
