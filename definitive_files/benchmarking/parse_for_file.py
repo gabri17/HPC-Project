@@ -8,7 +8,7 @@ directory = "."
 
 parser = argparse.ArgumentParser(description="Script che recupera tutti i logs in questa cartella e realizza una tabella |process | times|")
 parser.add_argument('-t', '--threads', action='store_true', default=False, help='Per analizzare la scalabilità OpenMP')
-parser.add_argument('-p', '--path', type=str, help='Percorso della directory da cui recuperare i logs (es. --path \\directory)')
+parser.add_argument('-p', '--path', type=str, default="./", help='Percorso della directory da cui recuperare i logs (es. --path \\directory)')
 
 args = parser.parse_args()
 print_threads = args.threads
