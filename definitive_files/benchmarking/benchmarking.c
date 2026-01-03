@@ -216,7 +216,7 @@ void generate_Em_Im(Point A, Point B, Point C, int nm,
         ec += 3;
 
         int t;
-        //#pragma omp parallel for
+        #pragma omp parallel for
         for (t = 1; t <= nm - 1; ++t) {
             double u = (double)t / nm;
             int local_ec = edge_offsets[t];
@@ -246,7 +246,7 @@ void generate_Em_Im(Point A, Point B, Point C, int nm,
         ic = interior_offsets[nm - 2] + 1;
 
         int ia;
-        //#pragma omp parallel for
+        #pragma omp parallel for
         for (ia = 1; ia <= nm - 2; ++ia) {
 
             int ic_local = interior_offsets[ia];
