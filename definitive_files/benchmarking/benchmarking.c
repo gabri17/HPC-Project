@@ -411,14 +411,14 @@ int main(int argc, char *argv[]) {
         printf("%d processors, %d threads per processor, complexity %d, A(%f, %f), B(%f, %f), C(%f, %f)\n", processes, getThreadsNo(), GLOBAL_ITER, A.x, A.y, B.x, B.y, C.x, C.y);
     }
 
-    int indx = 0;
+    int executionIndx = 0;
 
     double* times = NULL;
     if(rank == 0){
         times = malloc(sizeof(double) * EXECUTION);
     }
 
-    while(indx < (WARMUP + EXECUTION)) {
+    while(executionIndx < (WARMUP + EXECUTION)) {
 
         //The execution will start at same time
         MPI_Barrier(MPI_COMM_WORLD);
@@ -480,10 +480,10 @@ int main(int argc, char *argv[]) {
 
             //Local evaluation of function f on the edge nodes assigned to the process
             double local_sum = 0;
-            int indx;
+            int indxE;
             #pragma omp parallel for reduction(+ : local_sum)
-            for (indx = 0; indx < local_length; indx++) {
-                local_sum += f(local_E[indx].x, local_E[indx].y);
+            for (indxE = 0; indxE < local_length; indxE++) {
+                local_sum += f(local_E[indxE].x, local_E[indxE].y);
             }
 
             //Reduction of all local sums to the master process
@@ -509,9 +509,10 @@ int main(int argc, char *argv[]) {
 
             //Local evaluation of function f on the interior nodes assigned to the process
             local_sum = 0;
+            int indxI;
             #pragma omp parallel for reduction(+ : local_sum)
-            for (indx = 0; indx < local_length; indx++) {
-                local_sum += f(local_I[indx].x, local_I[indx].y);
+            for (indxI = 0; indxI < local_length; indxI++) {
+                local_sum += f(local_I[indxI].x, local_I[indxI].y);
             }
 
             //Reduction of all local sums to the master process
@@ -537,23 +538,23 @@ int main(int argc, char *argv[]) {
         if (rank == 0) {
             
             //Richardson Extrapolation - Print if it's first iteration
-            if(indx == 0){
+            if(executionIndx == 0){
                 printf("R[0]: %f\n", R[0][0]);
             }
 
             int m;
             for (m = 1; m < MaxLevel; m++) {
-                if(indx == 0){
+                if(executionIndx == 0){
                     printf("R[%d]: %f ", m, R[m][0]);
                 }
                 int k;
                 for (k = 1; k <= m; k++) {
                     R[m][k] = R[m][k - 1] + (-R[m - 1][k - 1] + R[m][k - 1]) / (pow(2, k) - 1);
-                    if(indx == 0){
+                    if(executionIndx == 0){
                         printf("%f ", R[m][k]);
                     }
                 }
-                if(indx == 0){
+                if(executionIndx == 0){
                     printf("\n");
                 }
             }
@@ -566,16 +567,16 @@ int main(int argc, char *argv[]) {
 
             double endTime = MPI_Wtime();
 
-            if(indx >= WARMUP) {
+            if(executionIndx >= WARMUP) {
                 //We take into account the execution time of the master process as execution time of the entire parallel algorithm
                 //We are sure master process will be the last to finish because it must waits for the contribution from all the other processes
                 //And then must perform other transformations on the data received.
-                times[indx-WARMUP] = endTime - startTime;
+                times[executionIndx-WARMUP] = endTime - startTime;
             } else {
                 printf("\nWARMUP=%f", endTime - startTime);
             }
         }
-        indx += 1;
+        executionIndx += 1;
     }
     
     if(rank == 0){

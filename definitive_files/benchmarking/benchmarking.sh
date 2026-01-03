@@ -9,7 +9,6 @@ cd $PBS_O_WORKDIR
 
 export ITER=1000000
 export OMP_NUM_THREADS=16
-export OMP_PLACES=threads
 module load mpich-3.2
 
 # Run the executable in the current directory
