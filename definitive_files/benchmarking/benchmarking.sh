@@ -7,7 +7,7 @@
 # Change to the folder where job is submitted (where the executable is located)
 cd $PBS_O_WORKDIR
 
-export ITER=8000000
+export ITER=4000000
 export OMP_NUM_THREADS=4
 module load mpich-3.2
 
