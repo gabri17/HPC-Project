@@ -206,58 +206,38 @@ void generate_Em_Im(Point A, Point B, Point C, int nm,
     /* --- Compute edge nodes (exclude the 3 original vertices) --- */
     if (nm >= 2) { /* there are internal edge points only when nm>=2 */
 
-        // Use a unique name for edge offsets to avoid scope confusion
-        int *edge_offsets = malloc(sizeof(int) * (nm));
-
-        edge_offsets[0] = 0;
-        for (int t = 1; t <= nm - 1; ++t) {
-            edge_offsets[t] = 3 * (t - 1);
-        }
-        ec = edge_offsets[nm - 1];
-        ec += 3;
-
-        for (int t = 1; t <= nm - 1; ++t) {
-            double u = (double)t / nm;
-            int local_ec = edge_offsets[t];
+        int t;
+        for (t = 1; t <= nm - 1; ++t) { //compute all points on each edge (0...nm) [I have nm+1 points][0 is A so I exclude it][nm is B so I exclude it]
+            double u = (double) t / nm; //contribution of each point
+            
+            //each point on the edge is a linear contribution of its extremes
 
             Point pAB = lerp(A, B, u);
-            edge[local_ec++] = pAB;
+            edge[ec++] = pAB;
 
             Point pBC = lerp(B, C, u);
-            edge[local_ec++] = pBC;
+            edge[ec++] = pBC;
 
             Point pCA = lerp(C, A, u);
-            edge[local_ec++] = pCA;
+            edge[ec++] = pCA;
         }
-
-        free(edge_offsets);
     }
 
     /* --- Compute interior nodes --- */
     if (nm > 2) { /* there are internal edge points only when nm > 2 */
-        int *interior_offsets = malloc(nm * sizeof(int));
-        interior_offsets[0] = 0;
-        interior_offsets[1] = 0;
-
-        for (int indx = 2; indx <= nm - 2; indx++) {
-            interior_offsets[indx] = interior_offsets[indx - 1] + (nm - 1 - (indx - 1));
-        }
-        ic = interior_offsets[nm - 2] + 1;
-
-        for (int ia = 1; ia <= nm - 2; ++ia) {
-
-            int ic_local = interior_offsets[ia];
-            
-            for (int ib = 1; ib <= nm - 1 - ia; ++ib) {
-
-                double u = (double)ia / nm;
-                double v = (double)ib / nm;
+        int ia;
+        for (ia = 1; ia <= nm - 2; ++ia) {
+            /* ib can range from 1 to nm-1-ia, such that ic = nm-ia-ib >=1 */
+            int ib;
+            for (ib = 1; ib <= nm - 1 - ia; ++ib) {
+                
+                double u = (double) ia / nm;
+                double v = (double) ib / nm;
 
                 Point p = tri_interp(A, B, C, u, v);
-                inter[ic_local++] = p;
+                inter[ic++] = p;
             }
         }
-        free(interior_offsets);
     }
 
     *E = edge;
