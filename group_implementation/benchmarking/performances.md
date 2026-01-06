@@ -193,7 +193,7 @@ With exclusivity
 
 ## Conclusions
 
-Good strong scalability, because by increasing problem size we improve the performances on higher number of MPI processes.
+Good weak scalability, because by increasing problem size we improve the performances on higher number of MPI processes.
 In any case degradation with around 32 MPI processes.
 
 
