@@ -196,4 +196,5 @@ With exclusivity
 Good strong scalability, because by increasing problem size we improve the performances on higher number of MPI processes.
 In any case degradation with around 32 MPI processes.
 
-
+Interesting to see performances are not so good with 250k and 500k but started to be good with 1M.
+Why with 250K and 500K initially bad with 2 processes and then good?
