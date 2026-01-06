@@ -16,7 +16,9 @@ module load mpich-3.2
 mpiexec -n 1 ./serial_implementation 2 1 4 2.5 6 0.75
 
 # For compilation:
-# mpicc -g -Wall -fopenmp -o executable source_code.c -lm -std=c99
+# mpicc -Wall -fopenmp -o executable source_code.c -lm -std=c99
 
 # To use other PBS strategies:
 # -l place=pack:excl
+# -l place=scatter:excl
+# in that case it is useful only for reserving the entire node for our run
