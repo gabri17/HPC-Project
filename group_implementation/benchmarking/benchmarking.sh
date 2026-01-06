@@ -12,7 +12,9 @@ export OMP_NUM_THREADS=4
 module load mpich-3.2
 
 # Run the executable in the current directory
-mpirun.actual -n 32 ./benchmarking 2 1 4 2.5 6 0.75
+mpirun.actual -n 32 ../benchmarking 2 1 4 2.5 6 0.75
+
+# Run in that way to analyzes cache misses and cache hits.
 #perf stat -e cache-misses,cache-references,cycles,instructions mpiexec -n 1 ./benchmarking 2 1 4 2.5 6 0.75
 
 # For compilation:
