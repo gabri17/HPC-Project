@@ -6,8 +6,18 @@ Academic year 2025-2026
 
 # Setup
 
+Hardware setup (Unitn CLUSTER HPC2):
+- 422,7 TFLOP of theroetical peak performance CPU
+- 7674 cores
+- 142 calculation nodes
+- 10 Gb/s network (some nodes with Infiniband up to 40 Gb/s and some with Omin Path up to 56 Gb/s)
+
+Software setup:
 - MPICH version 3.2.
 - Python version 3.10.14.
+- GCC version 4.8.5.
+- Operating system CentOS Linux 7.9
+- Scheduler openPBS 19.1
 
 # Code running - OUR algorithm
 
