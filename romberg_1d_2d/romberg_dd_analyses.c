@@ -23,7 +23,7 @@ typedef struct
 */
 void master_distribution_analysis(int size, Point v1, Point v2, Point v3)
 {
-    int m = 3; // Analyzing a specific level
+    int m = 3;
     long long nm = (1LL << m);
 
     NodeBuffer buffer;
@@ -98,7 +98,7 @@ void worker_computation_analysis()
     int k;
     for (k = 0; k < received_count; k++)
     {
-        double val = u[k] * 2.0; // dummy calculation
+        double val = u[k] * 2.0;
 
         // 1. local_edge_sum
         // READ local_edge_sum

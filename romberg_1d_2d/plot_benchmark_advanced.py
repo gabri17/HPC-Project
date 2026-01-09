@@ -15,14 +15,9 @@ def load_and_prep_data(filename):
     except FileNotFoundError:
         print(f"Error: {filename} not found. Please run the benchmark first.")
         return None
-
-    # Calculate Speedup and Efficiency
-    # We need to find the base time T(1) for each BufferSize to be accurate
     
-    # 1. Create a dictionary of T(1) for each Buffer Size in Strong Scaling
     base_times_strong = df[(df['Type'] == 'Strong') & (df['Procs'] == 1)].set_index('BufferSize')['Time'].to_dict()
     
-    # 2. Create a dictionary of T(1) for each Buffer Size in Weak Scaling
     base_times_weak = df[(df['Type'] == 'Weak') & (df['Procs'] == 1)].set_index('BufferSize')['Time'].to_dict()
 
     def calc_metrics(row):
@@ -31,12 +26,10 @@ def load_and_prep_data(filename):
             t1 = base_times_strong.get(row['BufferSize'], row['Time'])
             speedup = t1 / row['Time']
             efficiency = speedup / row['Procs']
-        else: # Weak
+        else: 
             t1 = base_times_weak.get(row['BufferSize'], row['Time'])
-            # Weak Speedup = (Time(1) * Procs) / Time(N) ? 
-            # Standard Weak Efficiency = Time(1) / Time(N)
             efficiency = t1 / row['Time'] 
-            speedup = efficiency * row['Procs'] # scaled speedup
+            speedup = efficiency * row['Procs'] 
             
         return pd.Series([speedup, efficiency])
 
@@ -63,7 +56,6 @@ def plot_buffer_sweet_spot(df):
     plt.ylabel('Execution Time (s)')
     plt.grid(True, which="both", ls="-", alpha=0.5)
     
-    # Annotate the minimum point
     min_time = subset['Time'].min()
     best_buf = subset.loc[subset['Time'].idxmin(), 'BufferSize']
     plt.annotate(f'Optimal: {best_buf}', xy=(best_buf, min_time), xytext=(best_buf, min_time*1.1),
@@ -85,7 +77,6 @@ def plot_3d_surface(df, scaling_type):
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
 
-    # Data for 3D plot must be grid format
     pivot_table = subset.pivot_table(index='BufferSize', columns='Procs', values='Efficiency')
     
     X, Y = np.meshgrid(pivot_table.columns, pivot_table.index)
@@ -97,7 +88,7 @@ def plot_3d_surface(df, scaling_type):
     ax.set_xlabel('Number of Processors')
     ax.set_ylabel('Buffer Size')
     ax.set_zlabel('Efficiency (0-1)')
-    ax.view_init(30, 120) # Adjust angle for better view
+    ax.view_init(30, 120) 
 
     fig.colorbar(surf, shrink=0.5, aspect=5, label='Efficiency')
     
@@ -132,14 +123,11 @@ if __name__ == "__main__":
     if df is not None:
         sns.set(style=SNS_THEME)
         
-        # 1. Sweet Spot Analysis (Line Plot)
         plot_buffer_sweet_spot(df)
         
-        # 2. 3D All-in-One Graphs
         plot_3d_surface(df, 'Strong')
         plot_3d_surface(df, 'Weak')
         
-        # 3. Heatmaps (Alternative to 3D)
         plot_heatmap(df, 'Strong')
         plot_heatmap(df, 'Weak')
         

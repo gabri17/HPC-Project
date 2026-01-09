@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # --- CONFIGURATION ---
-INPUT_FILE = 'benchmark_results.csv'  # Make sure this matches your CSV filename
+INPUT_FILE = 'benchmark_results.csv'  
 SNS_THEME = "whitegrid"
 
 def load_data(filename):
@@ -22,7 +22,6 @@ def get_best_buffer(df, scaling_type):
     max_procs = df['Procs'].max()
     subset = df[(df['Type'] == scaling_type) & (df['Procs'] == max_procs)]
     
-    # Find the row with the minimum time
     best_row = subset.loc[subset['Time'].idxmin()]
     return best_row['BufferSize']
 
@@ -32,13 +31,11 @@ def plot_buffer_impact(df):
     Shows the 'Sweet Spot'.
     """
     max_procs = df['Procs'].max()
-    # Filter for Strong scaling at max procs
     subset = df[(df['Type'] == 'Strong') & (df['Procs'] == max_procs)].sort_values('BufferSize')
     
     plt.figure(figsize=(10, 6))
     plt.plot(subset['BufferSize'], subset['Time'], marker='o', linewidth=2, color='royalblue')
     
-    # Highlight the best point
     min_time = subset['Time'].min()
     best_buf = subset.loc[subset['Time'].idxmin(), 'BufferSize']
     
@@ -59,24 +56,20 @@ def plot_strong_scaling(df, best_buffer):
     Plot 2 & 3: Speedup and Efficiency vs Processors 
     (Using ONLY the data from the Optimal Buffer Size).
     """
-    # Filter data for the best buffer only
     subset = df[(df['Type'] == 'Strong') & (df['BufferSize'] == best_buffer)].sort_values('Procs')
     
-    # Calculate Speedup: T(1) / T(N)
     t1 = subset[subset['Procs'] == 1]['Time'].values[0]
     subset['Speedup'] = t1 / subset['Time']
     subset['Efficiency'] = subset['Speedup'] / subset['Procs']
 
-    # --- Graph 2: Speedup ---
     plt.figure(figsize=(10, 6))
     plt.plot(subset['Procs'], subset['Speedup'], marker='o', linewidth=2, color='green', label=f'Actual (Buffer {best_buffer})')
-    # Ideal line
     plt.plot(subset['Procs'], subset['Procs'], 'k--', label='Ideal Linear', alpha=0.5)
     
     plt.title(f'Strong Scaling Speedup (Buffer Size {best_buffer})', fontsize=14)
     plt.xlabel('Number of Processors', fontsize=12)
     plt.ylabel('Speedup', fontsize=12)
-    plt.xticks(subset['Procs']) # Show all processor counts on X-axis
+    plt.xticks(subset['Procs']) 
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
@@ -106,8 +99,7 @@ def plot_weak_scaling(df, best_buffer):
     """
     subset = df[(df['Type'] == 'Weak') & (df['BufferSize'] == best_buffer)].sort_values('Procs')
     
-    # Calculate Weak Efficiency: T(1) / T(N) 
-    # (Since work increases with P, time should stay constant ideally)
+    
     t1 = subset[subset['Procs'] == 1]['Time'].values[0]
     subset['Efficiency'] = t1 / subset['Time']
 
@@ -132,14 +124,11 @@ if __name__ == "__main__":
     if df is not None:
         sns.set(style=SNS_THEME)
         
-        # 1. Analyze Buffer Impact
         plot_buffer_impact(df)
         
-        # 2. Find best buffer for Strong Scaling to keep graphs clean
         best_strong_buffer = get_best_buffer(df, 'Strong')
         plot_strong_scaling(df, best_strong_buffer)
         
-        # 3. Find best buffer for Weak Scaling (might be different)
         best_weak_buffer = get_best_buffer(df, 'Weak')
         plot_weak_scaling(df, best_weak_buffer)
         

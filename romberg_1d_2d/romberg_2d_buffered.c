@@ -65,7 +65,6 @@ void serial_code(Point v1, Point v2, Point v3)
 
     double **R = allocate_matrix(MAX_LEVEL);
 
-    // 1. Level 0 (Vertices)
     double area = 0.5 * fabs((v2.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v1.y));
     double sum_verts = heavy_f(v1.x, v1.y) + heavy_f(v2.x, v2.y) + heavy_f(v3.x, v3.y);
     R[0][0] = (area / 3.0) * sum_verts;
@@ -74,12 +73,10 @@ void serial_code(Point v1, Point v2, Point v3)
     double total_sum_edges = 0.0;
     double total_sum_interior = 0.0;
 
-    // 2. Loop over levels
     for (int m = 1; m < MAX_LEVEL; m++)
     {
         long long nm = (1LL << m);
 
-        // Serial computation of nodes
         for (long long i = 0; i <= nm; i++)
         {
             for (long long j = 0; j <= nm - i; j++)
@@ -89,7 +86,6 @@ void serial_code(Point v1, Point v2, Point v3)
                 if (i % 2 == 0 && j % 2 == 0)
                     continue;
 
-                // Transform Coordinate
                 double u = (double)i / (double)nm;
                 double v = (double)j / (double)nm;
                 double px = v1.x + u * (v2.x - v1.x) + v * (v3.x - v1.x);
@@ -105,11 +101,9 @@ void serial_code(Point v1, Point v2, Point v3)
             }
         }
 
-        // Update Column 0
         double term = sum_verts + 3.0 * total_sum_edges + 6.0 * total_sum_interior;
         R[m][0] = (area / (3.0 * (double)(nm * nm))) * term;
 
-        // Richardson Extrapolation
         double factor = 4.0;
         for (int k = 1; k <= m; k++)
         {
@@ -117,7 +111,6 @@ void serial_code(Point v1, Point v2, Point v3)
             factor *= 4.0;
         }
 
-        // Print Matrix Row
         printf("Row %2d | ", m);
         for (int k = 0; k <= m; k++)
             printf("%10.6f ", R[m][k]);
@@ -148,7 +141,6 @@ void master_code(int size, Point v1, Point v2, Point v3)
         buffer.count = 0;
         int dest_worker = 1;
 
-        // Distribute Work
         for (long long i = 0; i <= nm; i++)
         {
             for (long long j = 0; j <= nm - i; j++)
@@ -180,11 +172,9 @@ void master_code(int size, Point v1, Point v2, Point v3)
                 dest_worker = 1;
         }
 
-        // Synchronization
         for (int w = 1; w < size; w++)
             MPI_Send(NULL, 0, MPI_BYTE, w, TAG_STOP, MPI_COMM_WORLD);
 
-        // Collect Results
         for (int w = 1; w < size; w++)
         {
             WorkerResult res;
@@ -193,11 +183,9 @@ void master_code(int size, Point v1, Point v2, Point v3)
             total_sum_interior += res.sum_interior;
         }
 
-        // Update Table
         double term = sum_verts + 3.0 * total_sum_edges + 6.0 * total_sum_interior;
         R[m][0] = (area / (3.0 * (double)(nm * nm))) * term;
 
-        // Extrapolation
         double factor = 4.0;
         for (int k = 1; k <= m; k++)
         {
@@ -205,7 +193,6 @@ void master_code(int size, Point v1, Point v2, Point v3)
             factor *= 4.0;
         }
 
-        // Print Matrix Row
         printf("Row %2d | ", m);
         for (int k = 0; k <= m; k++)
             printf("%10.6f ", R[m][k]);
@@ -229,7 +216,8 @@ void worker_code(int rank, Point v1, Point v2, Point v3)
             if (status.MPI_TAG == TAG_STOP)
                 break;
 
-            for (int k = 0; k < buffer.count; k++) {
+            for (int k = 0; k < buffer.count; k++)
+            {
                 double u = buffer.u[k];
                 double v = buffer.v[k];
                 double px = v1.x + u * (v2.x - v1.x) + v * (v3.x - v1.x);

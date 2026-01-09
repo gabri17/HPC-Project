@@ -26,7 +26,6 @@ typedef struct
     double sum_interior;
 } WorkerResult;
 
-// Matrix allocation helper
 double **allocate_matrix(int n)
 {
     double **mat = (double **)malloc(n * sizeof(double *));
@@ -46,7 +45,6 @@ void free_matrix(double **mat, int n)
 double heavy_f(double x, double y)
 {
     double dummy = 0;
-    // G_COMPLEXITY controls the "size of the problem" per point
     for (int i = 0; i < G_COMPLEXITY; i++)
     {
         dummy += 1.0 / (pow(x, 2) + 1.0) + 1.0 / (pow(y, 2) + 1.0);
@@ -59,7 +57,6 @@ void master_code(int size, int buffer_size, Point v1, Point v2, Point v3)
 {
     double **R = allocate_matrix(MAX_LEVEL);
 
-    // Allocate dynamic buffers for u and v coordinates
     double *buf_u = (double *)malloc(buffer_size * sizeof(double));
     double *buf_v = (double *)malloc(buffer_size * sizeof(double));
     int count = 0;
@@ -93,7 +90,6 @@ void master_code(int size, int buffer_size, Point v1, Point v2, Point v3)
 
                 if (count == buffer_size)
                 {
-                    // Send arrays separately or packed. Sending separately for simplicity here.
                     MPI_Send(buf_u, buffer_size, MPI_DOUBLE, dest_worker, TAG_WORK_U, MPI_COMM_WORLD);
                     MPI_Send(buf_v, buffer_size, MPI_DOUBLE, dest_worker, TAG_WORK_V, MPI_COMM_WORLD);
 
@@ -104,7 +100,6 @@ void master_code(int size, int buffer_size, Point v1, Point v2, Point v3)
                 }
             }
         }
-        // Send remaining
         if (count > 0)
         {
             MPI_Send(buf_u, count, MPI_DOUBLE, dest_worker, TAG_WORK_U, MPI_COMM_WORLD);
@@ -114,11 +109,9 @@ void master_code(int size, int buffer_size, Point v1, Point v2, Point v3)
                 dest_worker = 1;
         }
 
-        // --- Synchronization ---
         for (int w = 1; w < size; w++)
             MPI_Send(NULL, 0, MPI_DOUBLE, w, TAG_STOP, MPI_COMM_WORLD);
 
-        // --- Result Collection ---
         for (int w = 1; w < size; w++)
         {
             WorkerResult res;
@@ -155,7 +148,6 @@ void worker_code(int buffer_size, Point v1, Point v2, Point v3)
 
         while (1)
         {
-            // Wait for U coordinates or STOP signal
             MPI_Recv(buf_u, buffer_size, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
             if (status.MPI_TAG == TAG_STOP)
@@ -164,7 +156,6 @@ void worker_code(int buffer_size, Point v1, Point v2, Point v3)
             int received_count;
             MPI_Get_count(&status, MPI_DOUBLE, &received_count);
 
-            // Receive V coordinates
             MPI_Recv(buf_v, received_count, MPI_DOUBLE, 0, TAG_WORK_V, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
             for (int k = 0; k < received_count; k++)
@@ -191,7 +182,6 @@ void worker_code(int buffer_size, Point v1, Point v2, Point v3)
 
 void serial_code(Point v1, Point v2, Point v3)
 {
-    // Basic serial implementation for P=1 benchmarking
     double **R = allocate_matrix(MAX_LEVEL);
     double area = 0.5 * fabs((v2.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v1.y));
     double sum_verts = heavy_f(v1.x, v1.y) + heavy_f(v2.x, v2.y) + heavy_f(v3.x, v3.y);
@@ -232,12 +222,11 @@ int main(int argc, char **argv)
 {
     int rank, size;
 
-    // Default parameters
     int buffer_size = 100;
     if (argc > 1)
         buffer_size = atoi(argv[1]);
     if (argc > 2)
-        G_COMPLEXITY = atoi(argv[2]); // Iterations inside heavy_f
+        G_COMPLEXITY = atoi(argv[2]);
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -263,7 +252,6 @@ int main(int argc, char **argv)
 
     double end = MPI_Wtime();
 
-    // Output simplified CSV format: [BENCH], [Complexity], [BufferSize], [Procs], [Time]
     if (rank == 0)
         printf("BENCH,%d,%d,%d,%f\n", G_COMPLEXITY, buffer_size, size, end - start);
 
