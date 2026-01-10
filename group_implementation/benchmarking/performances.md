@@ -65,6 +65,7 @@ With exclusivity
 | 1          | 10.589289   | 1.000   | 1.000      |
 | 2          | 6.719587    | 1.576   | 0.788      |
 | 4          | 2.702955    | 3.918   | 0.979      |
+| 8          | 1.383183    | 7.656   | 0.957      |
 | 16         | 0.850649    | 12.448  | 0.778      |
 | 32         | 0.525721    | 20.142  | 0.629      |
 
@@ -143,7 +144,7 @@ With exclusivity
 | 16         | 5.938992    | 14.476  | 0.905      |
 | 32         | 3.682951    | 23.344  | 0.730      |
 
-## Size 4,000,000 - run it again with scatter:excl
+## Size 4,000,000
 
 Without exclusivity
 | #processes |    Time     | Speedup | Efficiency |
@@ -166,7 +167,7 @@ With exclusivity
 | 16         | 11.639300   | 14.560  | 0.910      |
 | 32         | 8.024582    | 21.119  | 0.660      |
 
-# Size 8,000,000
+## Size 8,000,000
 
 Without exclusivity
 
@@ -198,3 +199,31 @@ In any case degradation with around 32 MPI processes.
 
 Interesting to see performances are not so good with 250k and 500k but started to be good with 1M.
 Why with 250K and 500K initially bad with 2 processes and then good?
+
+## Weak scalability
+
+
+Without exclusivity
+
+|    Size   | #processes |    Time     | Speedup | Efficiency |
+|-----------|------------|-------------|---------|------------|
+|  250 000  | 1          | 12.510785   | 1.000   | 1.000      |
+|  500 000  | 2          | 13.940681   | 1.686   | 0.843      |
+| 1 000 000 | 4          | 12.828467   | 3.858   | 0.964      |
+| 2 000 000 | 8          | 12.811527   | 7.630   | 0.954      |
+| 4 000 000 | 16         | 14.323840   | 13.794  | 0.862      |
+| 8 000 000 | 32         | 19.914254   | 22.302  | 0.697      |
+
+
+With exclusivity
+
+|    Size   | #processes |    Time     | Speedup | Efficiency |
+|-----------|------------|-------------|---------|------------|
+|  250 000  | 1          | 10.589289   | 1.000   | 1.000      |
+|  500 000  | 2          | 13.446666   | 1.599   | 0.800      |
+| 1 000 000 | 4          | 10.978125   | 3.912   | 0.978      |
+| 2 000 000 | 8          | 11.092168   | 7.751   | 0.969      |
+| 4 000 000 | 16         | 11.639300   | 14.560  | 0.910      |
+| 8 000 000 | 32         | 15.129021   | 22.475  | 0.702      |
+
+
