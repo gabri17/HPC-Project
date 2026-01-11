@@ -32,7 +32,7 @@ Software setup:
 To run the code, relies on the following bash files:
 - group_implementation/serial_impl/serial_implementation.sh: to run the SERIAL version
 - group_implementation/parallel_impl/parallel_implementation.sh: to run the HYBRID PARALLEL version (MPI + OpenMP)
-- - Specify proper MPI processes to use and threads to use and ask for proper number of chunks and cores per chunk
+ - Specify proper MPI processes to use and threads to use and ask for proper number of chunks and cores per chunk
 - group_implementation/benchmarking/benchmarking.sh: to run the BENCHMARKING
 
 In case of cluster execution, ask for proper number of cores (1 core per every thread).
@@ -49,7 +49,7 @@ To run any of the code with a different integrand function, change the function 
 
 To run the code, relies on the following bash files:
 - paper_implementation/implementation/run_romberg.sh: to run the SERIAL version and the PARALLEL version (MPI only)
-- - Specify proper MPI processes to use (1 for serial version) and ask for equal number of cores
+ - Specify proper MPI processes to use (1 for serial version) and ask for equal number of cores
 - paper_implementation/benchmarking/benchmarking.sh: to run the BENCHMARKING
 
 In case of cluster execution, ask for proper number of cores (1 core per every MPI process).
