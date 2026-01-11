@@ -27,7 +27,7 @@ Software setup:
 - Operating system CentOS Linux 7.9
 - Scheduler openPBS 19.1
 
-# Code running - OUR algorithm
+# Code execution - OUR algorithm
 
 To run the code, relies on the following bash files:
 - group_implementation/serial_impl/serial_implementation.sh: to run the SERIAL version
@@ -45,7 +45,7 @@ Any executable takes 6 double arguments: Ax Ay Bx By Cx Cy, specifically the x a
 
 To run any of the programs with a different integrand function, change the function *double f(double x, double y)* in the source code and compile again, following the instructions in the corresponding bash file.
 
-# Code running - Master-Worker algorithm
+# Code execution - Master-Worker algorithm
 
 To run the code, relies on the following bash files:
 - paper_implementation/implementation/run_romberg.sh: to run the SERIAL version and the PARALLEL version (MPI only)
