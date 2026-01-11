@@ -43,7 +43,7 @@ In any case, export to all MPI processes two environment variables:
 
 Any executable takes 6 double arguments: Ax Ay Bx By Cx Cy, specifically the x and y coordinates for the vertices of the cluster.
 
-To run any of the code with a different integrand function, change the function *double f(double x, double y)* in the source code and compile again, following the instructions in the corresponding bash file.
+To run any of the programs with a different integrand function, change the function *double f(double x, double y)* in the source code and compile again, following the instructions in the corresponding bash file.
 
 # Code running - Master-Worker algorithm
 
@@ -54,7 +54,7 @@ To run the code, relies on the following bash files:
 
 In case of cluster execution, ask for proper number of cores (1 core per every MPI process).
 
-To run any of the code with a different integrand function, change the function *double f(double x, double y)* in the source code and compile again, following the instructions in the corresponding bash file.
+To run any of the programs with a different integrand function, change the function *double f(double x, double y)* in the source code and compile again, following the instructions in the corresponding bash file.
 
 # Where can I see the performances of your algorithm?
 - For our algorithm, all results of benchmarking are available at group_implementation/benchmarking/results/performances.md
