@@ -35,3 +35,10 @@ In any case, export to all MPI processes two environment variables:
 Any executable takes 6 double arguments: Ax Ay Bx By Cx Cy, specifically the x and y coordinates for the vertices of the cluster.
 
 To run any of the code with a different integrand function, change the function *double f(double x, double y)* in the source code and compile again, following the instructions in the corresponding bash file.
+
+# Code running - Master-Worker algorithm
+
+To run the code, relies on the following bash files:
+- paper_implementation/???/???.sh: to run the SERIAL version
+- paper_implementation/???/???.sh: to run the HYBRID PARALLEL version (MPI + OpenMP)
+- paper_implementation/???/???.sh: to run the SERIAL version
