@@ -2,7 +2,15 @@
 
 GitHub repository for HPC Project @ Unitn by @me and @Sano.
 
-Academic year 2025-2026
+Academic year 2025-2026.
+
+In this repository, we provide two parallel algorithms for computing the double integral over a triangular region.
+Both exploit a Romberg-like technique.
+
+The *group_implementation* algorithm is a hybrid program (MPI + OpenMP) that uses *MPI_Scatterv*, *MPI_Bcast* and *MPI_Reduce* to implement a points distribution logic
+and parallelize to workload among all available processes.
+
+The *paper_implementation* provides the C implementation for the pseudo-code in the <a href="related_work\The_romberg-like_parallel_numerical_integration_on_a_cluster_system.pdf">related work</a> where the problem is well explained. This algorithm is a Master-Worker buffer-based problem that exploits MPI for a parallel solution of the problem.
 
 # Setup
 
@@ -47,3 +55,7 @@ To run the code, relies on the following bash files:
 In case of cluster execution, ask for proper number of cores (1 core per every MPI process).
 
 To run any of the code with a different integrand function, change the function *double f(double x, double y)* in the source code and compile again, following the instructions in the corresponding bash file.
+
+# Where can I see the performances of your algorithm?
+- For our algorithm, all results of benchmarking are available at group_implementation/benchmarking/results/performances.md
+- For the implementation of the Master-Worker algorithm, all results of benchmarking are available at paper_implementation/benchmarking/benchmark_results.csv
