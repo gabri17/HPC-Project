@@ -57,5 +57,5 @@ In case of cluster execution, ask for proper number of cores (1 core per every M
 To run any of the programs with a different integrand function, change the function *double f(double x, double y)* in the source code and compile again, following the instructions in the corresponding bash file.
 
 # Where can I see the performances of your algorithm?
-- For our algorithm, all results of benchmarking are available at group_implementation/benchmarking/results/performances.md
-- For the implementation of the Master-Worker algorithm, all results of benchmarking are available at paper_implementation/benchmarking/benchmark_results.csv
+- For our algorithm, all results of benchmarking are available <a here="/group_implementation/benchmarking/results/performances.md">here</a>.
+- For the implementation of the Master-Worker algorithm, all results of benchmarking are available <a here="/paper_implementation/benchmarking/benchmark_results.csv">here</a>.
