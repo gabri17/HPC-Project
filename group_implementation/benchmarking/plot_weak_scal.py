@@ -22,7 +22,7 @@ plt.grid(False)
 plt.xticks(processes, labels=[str(int(p)) for p in processes])
 plt.legend()
 plt.tight_layout()
-plt.savefig('speedup_vs_processes.png', dpi=150)
+plt.savefig('speedup_vs_processes_weak_scal.png', dpi=150)
 
 # Plot: Efficiency vs processes
 plt.figure(figsize=(8,4))
@@ -37,7 +37,7 @@ plt.xticks(processes, labels=[str(int(p)) for p in processes])
 plt.ylim(0,1.05)
 plt.legend()
 plt.tight_layout()
-plt.savefig('efficiency_vs_processes.png', dpi=150)
+plt.savefig('efficiency_vs_processes_weak_scal.png', dpi=150)
 
 # Mostra i grafici
 plt.show()
