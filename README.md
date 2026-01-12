@@ -52,7 +52,7 @@ To run the code, relies on the following bash files:
     - Specify proper MPI processes to use (1 for serial version) and ask for equal number of cores
     - To change the integrand function, the computational complexity or the buffer size, change the source code *romberg_2d_buffered.c* and compile again, following the instructions in the bash file.
     - It is possible to change vertices of the triangles by passing 6 double command line arguments, as explained above.
-- <a href="paper_implementation/benchmarking/benchmarking.sh">benchmarking.sh</a>: to run the BENCHMARKING
+- <a href="paper_implementation/benchmarking/bench_romberg.sh">bench_romberg.sh</a>: to run the BENCHMARKING
     - To change the integrand function or the vertices of the triangle, change the source code *benchmarking.c* and compile again, following the instructions in the bash file.
     - Computational complexity of the function and buffer sizes are passed by command line argument (first argument is buffer size and second is computational complexity).
 
