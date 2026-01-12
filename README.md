@@ -48,7 +48,7 @@ To run any of the programs with a different integrand function, change the funct
 # Code execution - Master-Worker algorithm
 
 To run the code, relies on the following bash files:
-- <a href="paper_implementation/implementation/run_romberg.sh">run_romberg.sh</a>: to run the SERIAL version and the PARALLEL version (MPI only)
+- <a href="paper_implementation/implementation/run_romberg_2D.sh">run_romberg_2D.sh</a>: to run the SERIAL version and the PARALLEL version (MPI only)
     - Specify proper MPI processes to use (1 for serial version) and ask for equal number of cores
     - To change the integrand function, the computational complexity or the buffer size, change the source code *romberg_2d_buffered.c* and compile again, following the instructions in the bash file.
     - It is possible to change vertices of the triangles by passing 6 double command line arguments, as explained above.
