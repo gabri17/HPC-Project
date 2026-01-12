@@ -41,7 +41,7 @@ In any case, export to all MPI processes two environment variables:
 - ITER: set the complexity of the integrand function (represented by the number of 'dummy' iterations performed)
 - OMP_NUM_THREADS: set the number of threads to generate per each MPI process
 
-Any executable takes 6 double arguments: Ax Ay Bx By Cx Cy, specifically the x and y coordinates for the vertices of the cluster.
+Any executable takes 6 double command line arguments: Ax Ay Bx By Cx Cy, specifically the x and y coordinates for the vertices of the cluster.
 
 To run any of the programs with a different integrand function, change the function *double f(double x, double y)* in the source code and compile again, following the instructions in the corresponding bash file.
 
@@ -50,11 +50,12 @@ To run any of the programs with a different integrand function, change the funct
 To run the code, relies on the following bash files:
 - paper_implementation/implementation/run_romberg.sh: to run the SERIAL version and the PARALLEL version (MPI only)
     - Specify proper MPI processes to use (1 for serial version) and ask for equal number of cores
+    - To change the integrand function or the computational complexity, change the source code *romberg_2d_buffered.c* and compile again, following the instructions in the bash file.
 - paper_implementation/benchmarking/benchmarking.sh: to run the BENCHMARKING
+    - To change the integrand function or the vertices of the triangle, change the source code *benchmarking.c* and compile again, following the instructions in the bash file.
+    - Computational complexity of the functi and buffer sizes are passed by command line argument: ComputationalComplexity BufferSize
 
 In case of cluster execution, ask for proper number of cores (1 core per every MPI process).
-
-To run any of the programs with a different integrand function, change the function *double f(double x, double y)* in the source code and compile again, following the instructions in the corresponding bash file.
 
 # Where can I see the performances of your algorithm?
 - For our algorithm, all results of benchmarking are available <a href="/group_implementation/benchmarking/results/performances.md">here</a>.

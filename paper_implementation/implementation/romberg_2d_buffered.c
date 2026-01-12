@@ -4,13 +4,16 @@
 #include <mpi.h>
 
 // --- Configuration ---
-#define BUFFER_SIZE 5 // Size of the coordinate buffer sent to workers
+#define BUFFER_SIZE 5 // Size of the coordinate buffer sent to workers (number of points to send within a buffer)
 #define MAX_LEVEL 8   // Depth of Romberg table
 
 // --- Message Tags ---
 #define TAG_WORK_CHUNK 1 // Tag for sending a chunk of work
 #define TAG_STOP 2       // Tag to signal end of level
 #define TAG_RESULT 3     // Tag for sending back results
+
+// Global variable to control how much CPU work 'f' simulates.
+int G_COMPLEXITY = 1000000;
 
 // A 2D point structure
 typedef struct
@@ -23,10 +26,11 @@ typedef struct
 // Sending one by one would be too slow due to network latency.
 typedef struct
 {
-    int count;             // Number of points in this buffer
-    double u[BUFFER_SIZE]; // Normalized coordinate u
-    double v[BUFFER_SIZE]; // Normalized coordinate v
+    int count;                  // Number of points in this buffer
+    double u[BUFFER_SIZE];      // Normalized coordinate u
+    double v[BUFFER_SIZE];      // Normalized coordinate v
 } NodeBuffer;
+// We use two distinct vectors te represent the two (normalized) coordinates of one point
 
 // Structure to return results.
 // We calculate edges and interior points separately for Romberg logic.
@@ -53,10 +57,10 @@ void free_matrix(double **mat, int n)
     free(mat);
 }
 
-// The heavy function to integrate f(x,y).
+// The function to integrate.
 // Includes a loop to simulate computational intensity.
-double heavy_f(double x, double y)
-{
+double f(double x, double y) {
+
     const int ITER = 1000000;
     double dummy = 0;
 
@@ -78,10 +82,10 @@ void serial_code(Point v1, Point v2, Point v3)
 
     double **R = allocate_matrix(MAX_LEVEL);
 
-    // Step 0: Initial Area Calculation (Level 0)
+    // Initial Area Calculation (Level 0)
     // Area of triangle using determinant method
     double area = 0.5 * fabs((v2.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v1.y));
-    double sum_verts = heavy_f(v1.x, v1.y) + heavy_f(v2.x, v2.y) + heavy_f(v3.x, v3.y);
+    double sum_verts = f(v1.x, v1.y) + f(v2.x, v2.y) + f(v3.x, v3.y);
     R[0][0] = (area / 3.0) * sum_verts;
     printf("Row  0 | %10.6f\n", R[0][0]);
 
@@ -111,7 +115,7 @@ void serial_code(Point v1, Point v2, Point v3)
                 double px = v1.x + u * (v2.x - v1.x) + v * (v3.x - v1.x);
                 double py = v1.y + u * (v2.y - v1.y) + v * (v3.y - v1.y);
 
-                double val = heavy_f(px, py);
+                double val = f(px, py);
 
                 // Classify: Is it on the Edge or Interior?
                 // This distinction matters for the specific 2D Romberg formula used
@@ -127,7 +131,7 @@ void serial_code(Point v1, Point v2, Point v3)
         double term = sum_verts + 3.0 * total_sum_edges + 6.0 * total_sum_interior;
         R[m][0] = (area / (3.0 * (double)(nm * nm))) * term;
 
-        // Richardson Extrapolation (Refining the result)
+        // Richardson extrapolation (refining the result)
         double factor = 4.0;
         for (int k = 1; k <= m; k++)
         {
@@ -154,7 +158,7 @@ void master_code(int size, Point v1, Point v2, Point v3)
 
     // Initial Area Calculation (Locally on Master)
     double area = 0.5 * fabs((v2.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v1.y));
-    double sum_verts = heavy_f(v1.x, v1.y) + heavy_f(v2.x, v2.y) + heavy_f(v3.x, v3.y);
+    double sum_verts = f(v1.x, v1.y) + f(v2.x, v2.y) + f(v3.x, v3.y);
     R[0][0] = (area / 3.0) * sum_verts;
     printf("Row  0 | %10.6f\n", R[0][0]);
 
@@ -226,7 +230,7 @@ void master_code(int size, Point v1, Point v2, Point v3)
         double term = sum_verts + 3.0 * total_sum_edges + 6.0 * total_sum_interior;
         R[m][0] = (area / (3.0 * (double)(nm * nm))) * term;
 
-        // Perform Richardson Extrapolation
+        // Perform Richardson extrapolation
         double factor = 4.0;
         for (int k = 1; k <= m; k++)
         {
@@ -275,7 +279,7 @@ void worker_code(int rank, Point v1, Point v2, Point v3)
                 double px = v1.x + u * (v2.x - v1.x) + v * (v3.x - v1.x);
                 double py = v1.y + u * (v2.y - v1.y) + v * (v3.y - v1.y);
 
-                double val = heavy_f(px, py);
+                double val = f(px, py);
 
                 // Classify point (Edge vs Interior)
                 double eps = 1e-9;
@@ -303,10 +307,23 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    // Define the triangular region
+    // Default points
     Point v1 = {2.0, 1.0};
     Point v2 = {4.0, 2.5};
     Point v3 = {6.0, 0.75};
+
+    int paramIndx = 1;
+
+    if(argc == 7){
+        // Define the triangular region if different arguments are passed
+        // ./program v1.x v1.y v2.x v2.y v3.x v3.y
+        v1.x = atof(argv[paramIndx++]);
+        v1.y = atof(argv[paramIndx++]);
+        v2.x = atof(argv[paramIndx++]);
+        v2.y = atof(argv[paramIndx++]);
+        v3.x = atof(argv[paramIndx++]);
+        v3.y = atof(argv[paramIndx++]);
+    }
 
     double start = MPI_Wtime();
 
@@ -325,8 +342,10 @@ int main(int argc, char **argv)
     }
 
     double end = MPI_Wtime();
-    if (rank == 0)
-        printf("\nProcesses: %d | Time: %f seconds\n", size, end - start);
+    if (rank == 0){
+        printf("\nComplexity: %d | Processes: %d | Time: %f seconds\n", G_COMPLEXITY, size, end - start);
+        printf("\nVertices: (%f, %f) (%f, %f) (%f, %f)\n", v1.x, v1.y, v2.x, v2.y, v3.x, v3.y);
+    }
 
     MPI_Finalize();
     return 0;

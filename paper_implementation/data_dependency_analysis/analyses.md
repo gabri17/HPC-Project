@@ -19,7 +19,6 @@ WW -> OUTPUT (Output Dependency)
 | buffer.count    | 153               | i,j       | write  | 151             | i,j+1     | read   | yes           | FLOW             | **YES** (Must know prev count to write next u)    |
 | dest_worker     | 157               | i,j       | read   | 158             | i,j       | write  | no            | ANTI             | **NO** (Within same thread)                       |
 | dest_worker     | 158               | i,j       | write  | 157             | i,j+X     | read   | yes           | FLOW             | **YES** (Round-robin logic depends on prev)       |
-| MPI_Send        | 156               | i,j       | call   | 156             | i,j+X     | call   | yes           | FLOW             | **YES** (Socket access serialization)             |
 
 **Conclusion:** The Master loop is **inherently serial**. It is not possible to calculate which worker receives the _next_ point without knowing if the _current_ buffer is full.
 
@@ -34,17 +33,18 @@ WW -> OUTPUT (Output Dependency)
 | val             | 225               | k         | write  | 225             | k+1       | write  | yes           | OUTPUT           | **NO** (Private var)        |
 | local_edge_sum  | 229               | k         | read   | 229             | k         | write  | no            | ANTI             | **NO** (Same thread)        |
 | local_edge_sum  | 229               | k         | write  | 229             | k+1       | read   | yes           | FLOW             | **NO** (Standard Reduction) |
+| local_int_sum   | 231               | k         | read   | 231             | k         | write  | no            | ANTI             | **NO** (Same thread)        |
+| local_int_sum   | 231               | k         | write  | 231             | k+1       | read   | yes           | FLOW             | **NO** (Standard Reduction) |
 
-**Conclusion:** This loop is safe to parallelize (e.g., SIMD or OMP) because `local_edge_sum` is a reduction variable.
+**Conclusion:** This loop is safe to parallelize (e.g., SIMD or OMP) because `local_edge_sum` and `local_int_sum` are reduction variables.
 
-# 3. Serial: Richardson Extrapolation
+# 3. Serial: Richardson extrapolation
 
 **Location:** Final loop `k` inside `master_code`.
 
 | Memory Location | Earlier Statement |           |        | Later Statement |           |        | Loop-carried? | Kind of dataflow | Issue                       |
 | --------------- | ----------------- | --------- | ------ | --------------- | --------- | ------ | ------------- | ---------------- | --------------------------- |
 |                 | Line              | Iteration | Access | Line            | Iteration | Access |               |                  |                             |
-| R[m][k]         | 192               | k         | write  | 192             | k+1       | read   | no            | -                | **NO**                      |
-| R[m][k-1]       | 192               | k-1       | write  | 192             | k         | read   | yes           | FLOW             | **YES** (Strict Dependency) |
+| R[m][k]         | 192               | k         | write  | 192             | k+1       | read   | yes           | FLOW             | **YES** (Strict Dependency) |
 
 **Conclusion:** `R[m][k]` depends directly on `R[m][k-1]`. This calculation must remain serial, but the cost is negligible compared to the rest of the program.
