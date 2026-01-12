@@ -60,4 +60,4 @@ In case of cluster execution, ask for proper number of cores (1 core per every M
 
 # Where can I see the performances of your algorithm?
 - For our algorithm, all results of benchmarking are available <a href="/group_implementation/benchmarking/results/performances.md">here</a>.
-- For the implementation of the Master-Worker algorithm, all results of benchmarking are available <a href="/paper_implementation/benchmarking/resuts/benchmark_results.csv">here</a>.
+- For the implementation of the Master-Worker algorithm, all results of benchmarking are available <a href="/paper_implementation/benchmarking/results/benchmark_results.csv">here</a>.
