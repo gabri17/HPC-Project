@@ -66,7 +66,7 @@ if ((total_length % processes) != 0) {
 |-----------------|---------------------------|---------------|--------|---------------------------|---------------|--------|---------------|------------------|-------------------------|
 |                 | Line                      | Iteration     | Access | Line                      | Iteration     | Access |               |                  |                         |
 | indexOfProcess  | 14                       | i             | read   | 15                       | i             | write  | no            | ANTI             | NO (within same thread) |
-| indexOfProcess  | 15                       | i             | 14  | 177                       | i+1           | read   | yes           | FLOW             | YES (depends on prev it)|
+| indexOfProcess  | 15                       | i             | write  | 14                       | i+1           | read   | yes           | FLOW             | YES (depends on prev it)|
 | indexOfProcess  | 15                       | i             | write  | 15                       | i+1           | write  | yes           | OUTPUT           | YES (depends on prev it)|
 
 indexOfProcess as ic. We can elaborate a strategy (indexOfProcess is processes-1-left+t).
@@ -106,7 +106,8 @@ No problems, each thread is accessing different memory areas.
 | Memory Location | Earlier Statement         |               |        | Later Statement           |               |        | Loop-carried? | Kind of dataflow | Issue |
 |-----------------|---------------------------|---------------|--------|---------------------------|---------------|--------|---------------|------------------|-------|
 |                 | Line                      | Iteration     | Access | Line                      | Iteration     | Access |     |        |                           |
-| local_sum       | 336                       | i             | write  | 336                       | i+1           | read   | yes | FLOW   | NO (use REDUCE clause)           |
+| sumE       | 336                       | i             | write  | 336                       | i+1           | read   | yes | FLOW   | NO (use REDUCE clause)           |
+| sumI       | 331                       | i             | write  | 331                       | i+1           | read   | yes | FLOW   | NO (use REDUCE clause)           |
 
 f is part of dynamic extent but it's not giving problem since it does not modify local_E[indx] or local_I[indx] (= the points themselves).
 
