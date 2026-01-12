@@ -30,10 +30,10 @@ Software setup:
 # Code execution - OUR algorithm
 
 To run the code, relies on the following bash files:
-- group_implementation/serial_impl/serial_implementation.sh: to run the SERIAL version
-- group_implementation/parallel_impl/parallel_implementation.sh: to run the HYBRID PARALLEL version (MPI + OpenMP)
+- <a href="group_implementation/serial_impl/serial_implementation.sh">serial_implementation.sh</a>: to run the SERIAL version
+- <a href="group_implementation/parallel_impl/parallel_implementation.sh">parallel_implementation.sh</a>: to run the HYBRID PARALLEL version (MPI + OpenMP)
     - Specify proper MPI processes to use and threads to use and ask for proper number of chunks and cores per chunk
-- group_implementation/benchmarking/benchmarking.sh: to run the BENCHMARKING
+- <a href="group_implementation/benchmarking/benchmarking.sh">benchmarking.sh</a>: to run the BENCHMARKING
 
 In case of cluster execution, ask for proper number of cores (1 core per every thread).
 
@@ -48,11 +48,11 @@ To run any of the programs with a different integrand function, change the funct
 # Code execution - Master-Worker algorithm
 
 To run the code, relies on the following bash files:
-- paper_implementation/implementation/run_romberg.sh: to run the SERIAL version and the PARALLEL version (MPI only)
+- <a href="paper_implementation/implementation/run_romberg.sh">run_romberg.sh</a>: to run the SERIAL version and the PARALLEL version (MPI only)
     - Specify proper MPI processes to use (1 for serial version) and ask for equal number of cores
     - To change the integrand function, the computational complexity or the buffer size, change the source code *romberg_2d_buffered.c* and compile again, following the instructions in the bash file.
     - It is possible to change vertices of the triangles by passing 6 double command line arguments, as explained above.
-- paper_implementation/benchmarking/benchmarking.sh: to run the BENCHMARKING
+- <a href="paper_implementation/benchmarking/benchmarking.sh">benchmarking.sh</a>: to run the BENCHMARKING
     - To change the integrand function or the vertices of the triangle, change the source code *benchmarking.c* and compile again, following the instructions in the bash file.
     - Computational complexity of the function and buffer sizes are passed by command line argument (first argument is buffer size and second is computational complexity).
 
