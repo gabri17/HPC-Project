@@ -8,7 +8,11 @@
 module load mpich-3.2
 cd $PBS_O_WORKDIR
 
-for P in 1 2 4 8 16; do
-    mpirun.actual -n $P ./romberg_2d
-    echo "" 
-done
+mpirun.actual -n 16 ./romberg_2d 2 1 4 2.5 6 0.75
+
+# For compilation:
+# mpicc -Wall -o executable source_code.c -lm -std=c99
+
+# To use other PBS strategies:
+# -l place=pack:excl
+# -l place=scatter:excl

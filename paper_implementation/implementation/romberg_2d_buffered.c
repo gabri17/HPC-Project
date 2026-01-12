@@ -30,7 +30,7 @@ typedef struct
     double u[BUFFER_SIZE];      // Normalized coordinate u
     double v[BUFFER_SIZE];      // Normalized coordinate v
 } NodeBuffer;
-// We use two distinct vectors te represent the two (normalized) coordinates of one point
+// We use two distinct vectors to represent the two (normalized) coordinates of the points
 
 // Structure to return results.
 // We calculate edges and interior points separately for Romberg logic.
@@ -61,7 +61,7 @@ void free_matrix(double **mat, int n)
 // Includes a loop to simulate computational intensity.
 double f(double x, double y) {
 
-    const int ITER = 1000000;
+    const int ITER = G_COMPLEXITY;
     double dummy = 0;
 
     for (int i = 0; i < ITER; i++)
@@ -132,11 +132,9 @@ void serial_code(Point v1, Point v2, Point v3)
         R[m][0] = (area / (3.0 * (double)(nm * nm))) * term;
 
         // Richardson extrapolation (refining the result)
-        double factor = 4.0;
         for (int k = 1; k <= m; k++)
         {
-            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (factor - 1.0);
-            factor *= 4.0;
+            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (pow(2, k) - 1.0);
         }
 
         printf("Row %2d | ", m);
@@ -231,11 +229,9 @@ void master_code(int size, Point v1, Point v2, Point v3)
         R[m][0] = (area / (3.0 * (double)(nm * nm))) * term;
 
         // Perform Richardson extrapolation
-        double factor = 4.0;
         for (int k = 1; k <= m; k++)
         {
-            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (factor - 1.0);
-            factor *= 4.0;
+            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (pow(2, k) - 1.0);
         }
 
         // Output results
