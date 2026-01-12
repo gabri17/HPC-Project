@@ -61,3 +61,23 @@ In case of cluster execution, ask for proper number of cores (1 core per every M
 # Where can I see the performances of your algorithm?
 - For our algorithm, all results of benchmarking are available <a href="/group_implementation/benchmarking/results/performances.md">here</a>.
 - For the implementation of the Master-Worker algorithm, all results of benchmarking are available <a href="/paper_implementation/benchmarking/results/benchmark_results.csv">here</a>.
+
+## Project Structure
+
+```
+HPC-Project/
+├── Report_HPC_Volani_Hamburdzamyan.pdf               # Official report of the repository
+|
+├── related_work/                                     # Directory with info about the related work that inspired our project
+|
+├── paper_implementation/                             # Directory for the MASTER-WORKER ALGORITHM
+│   ├── implementation/                               # Directory with PARALLEL source code, executable program and bash script for cluster runs 
+│   ├── benchmarking/                                 # Directory with source code of benchmarking and RESULTS
+│   └── data_dependency_analysis/                     # Directory with data dependency analysis
+│   
+└── group_implementation/                             # Directory for OUR ALGORITHM
+    ├── parallel_impl/                                # Directory with PARALLEL source code, executable program and bash script for cluster runs
+    ├── serial_impl/                                  # Directory with SERIAL source code, executable program and bash script for cluster runs 
+    ├── benchmarking/                                 # Directory with source code of benchmarking and RESULTS
+    └── data_dependency_analysis/                     # Directory with data dependency analysis
+```
