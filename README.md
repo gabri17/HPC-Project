@@ -54,7 +54,7 @@ To run the code, relies on the following bash files:
     - It is possible to change vertices of the triangles by passing 6 double command line arguments, as explained above.
 - paper_implementation/benchmarking/benchmarking.sh: to run the BENCHMARKING
     - To change the integrand function or the vertices of the triangle, change the source code *benchmarking.c* and compile again, following the instructions in the bash file.
-    - Computational complexity of the functi and buffer sizes are passed by command line argument: ComputationalComplexity BufferSize
+    - Computational complexity of the function and buffer sizes are passed by command line argument (first argument is buffer size and second is computational complexity).
 
 In case of cluster execution, ask for proper number of cores (1 core per every MPI process).
 

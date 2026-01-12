@@ -12,7 +12,7 @@
 
 #define MAX_LEVEL 8 // Depth of the Romberg table (how many times we refine grid)
 
-// Global variable to control how much CPU work 'heavy_f' simulates.
+// Global variable to control how much CPU work 'f' simulates.
 // This allows us to test Strong/Weak scaling via command line args.
 int G_COMPLEXITY = 1000000;
 
@@ -51,7 +51,7 @@ void free_matrix(double **mat, int n)
 
 // The function to integrate. Includes a loop to simulate high CPU load.
 // Complexity is controlled by G_COMPLEXITY.
-double heavy_f(double x, double y)
+double f(double x, double y)
 {
     double dummy = 0;
     // Busy-work loop to make this function "heavy"
@@ -76,7 +76,7 @@ void master_code(int size, int buffer_size, Point v1, Point v2, Point v3)
 
     // Step 0: Calculate initial area and vertices (Level 0)
     double area = 0.5 * fabs((v2.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v1.y));
-    double sum_verts = heavy_f(v1.x, v1.y) + heavy_f(v2.x, v2.y) + heavy_f(v3.x, v3.y);
+    double sum_verts = f(v1.x, v1.y) + f(v2.x, v2.y) + f(v3.x, v3.y);
     R[0][0] = (area / 3.0) * sum_verts;
 
     double total_sum_edges = 0.0;
@@ -148,10 +148,9 @@ void master_code(int size, int buffer_size, Point v1, Point v2, Point v3)
         double term = sum_verts + 3.0 * total_sum_edges + 6.0 * total_sum_interior;
         R[m][0] = (area / (3.0 * (double)(nm * nm))) * term;
 
-        // Richardson Extrapolation
-        double factor = 4.0;
+        // Richardson extrapolation
         for (int k = 1; k <= m; k++)
-            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (factor - 1.0);
+            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (pow(2, k) - 1.0);
     }
 
     free(buf_u);
@@ -160,7 +159,7 @@ void master_code(int size, int buffer_size, Point v1, Point v2, Point v3)
 }
 
 // --- WORKER PROCESS ---
-// Receives coordinates, calculates heavy_f, returns sums
+// Receives coordinates, calculates f, returns sums
 void worker_code(int buffer_size, Point v1, Point v2, Point v3)
 {
     // Allocate buffers to receive incoming data
@@ -198,7 +197,7 @@ void worker_code(int buffer_size, Point v1, Point v2, Point v3)
                 double px = v1.x + u * (v2.x - v1.x) + v * (v3.x - v1.x);
                 double py = v1.y + u * (v2.y - v1.y) + v * (v3.y - v1.y);
 
-                double val = heavy_f(px, py);
+                double val = f(px, py);
 
                 // Classify: Edge vs Interior
                 double eps = 1e-9;
@@ -223,7 +222,7 @@ void serial_code(Point v1, Point v2, Point v3)
 {
     double **R = allocate_matrix(MAX_LEVEL);
     double area = 0.5 * fabs((v2.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v1.y));
-    double sum_verts = heavy_f(v1.x, v1.y) + heavy_f(v2.x, v2.y) + heavy_f(v3.x, v3.y);
+    double sum_verts = f(v1.x, v1.y) + f(v2.x, v2.y) + f(v3.x, v3.y);
     R[0][0] = (area / 3.0) * sum_verts;
 
     for (int m = 1; m < MAX_LEVEL; m++)
@@ -242,7 +241,7 @@ void serial_code(Point v1, Point v2, Point v3)
                 double u = (double)i / nm, v = (double)j / nm;
                 double px = v1.x + u * (v2.x - v1.x) + v * (v3.x - v1.x);
                 double py = v1.y + u * (v2.y - v1.y) + v * (v3.y - v1.y);
-                double val = heavy_f(px, py);
+                double val = f(px, py);
                 if (u < 1e-9 || v < 1e-9 || (u + v) > (1.0 - 1e-9))
                     edge += val;
                 else
@@ -252,7 +251,7 @@ void serial_code(Point v1, Point v2, Point v3)
         double term = sum_verts + 3.0 * edge + 6.0 * interior;
         R[m][0] = (area / (3.0 * (double)(nm * nm))) * term;
         for (int k = 1; k <= m; k++)
-            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (pow(4, k) - 1.0);
+            R[m][k] = R[m][k - 1] + (R[m][k - 1] - R[m - 1][k - 1]) / (pow(2, k) - 1.0);
     }
     free_matrix(R, MAX_LEVEL);
 }

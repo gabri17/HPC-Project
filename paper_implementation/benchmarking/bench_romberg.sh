@@ -60,3 +60,6 @@ for B in $BUFFERS; do
 done
 
 echo "Benchmarking complete. Results saved to $OUTPUT_FILE"
+
+# For compilation:
+# mpicc -Wall -o executable source_code.c -lm -std=c99
