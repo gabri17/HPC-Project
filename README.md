@@ -1,6 +1,6 @@
 # HPC-Project
 
-GitHub repository for HPC Project @ Unitn by @me and @Sano.
+GitHub repository for HPC Project @ Unitn by @me and @Sano. <a href"https://www.canva.com/design/DAG-bSRRKxU/EV06j1UHVTkWS7GRp_nIPQ/view?utm_content=DAG-bSRRKxU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=ha9df6f653d">Here</a> the presentation of the project.
 
 Academic year 2025-2026.
 
